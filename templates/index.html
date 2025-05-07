@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Database Table Browser</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 1rem;
+      }
+      input {
+        padding: 0.5rem;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 1rem;
+      }
+      .table-list {
+        list-style: none;
+        padding: 0;
+      }
+      .table-item {
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+        border-radius: 4px;
+      }
+      .table-name {
+        font-weight: bold;
+      }
+      .columns {
+        margin: 0.5rem 0 0 1rem;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Database Tables</h1>
+    <input
+      type="text"
+      id="filterInput"
+      placeholder="Type a column name to filter tables…"
+      oninput="renderTables()"
+    />
+    <ul id="tables" class="table-list"></ul>
+
+    <script>
+      let tableMap = {};
+
+      async function fetchTables() {
+        const res = await fetch("/api/table_columns");
+        if (!res.ok) {
+          document.getElementById("tables").innerHTML =
+            '<li style="color:red">Failed to load table list</li>';
+          return;
+        }
+        tableMap = await res.json();
+        renderTables();
+      }
+
+      function renderTables() {
+        const filter = document
+          .getElementById("filterInput")
+          .value.trim()
+          .toLowerCase();
+        const list = document.getElementById("tables");
+        list.innerHTML = "";
+
+        Object.entries(tableMap).forEach(([table, columns]) => {
+          if (
+            filter &&
+            !columns.some((c) => c.toLowerCase().includes(filter))
+          ) {
+            return;
+          }
+
+          const li = document.createElement("li");
+          li.className = "table-item";
+
+          const name = document.createElement("div");
+          name.className = "table-name";
+          name.textContent = table;
+
+          const cols = document.createElement("ul");
+          cols.className = "columns";
+          columns.forEach((col) => {
+            const ci = document.createElement("li");
+            ci.textContent = col;
+            cols.appendChild(ci);
+          });
+
+          li.appendChild(name);
+          li.appendChild(cols);
+          list.appendChild(li);
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", fetchTables);
+    </script>
+  </body>
+</html>
