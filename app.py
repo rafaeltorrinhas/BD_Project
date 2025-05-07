@@ -1,8 +1,37 @@
-from flask import Flask, render_template, jsonify
 import os
+import datetime
+from dotenv import load_dotenv
+from flask import Flask, render_template, jsonify
 import pyodbc
+
+# ─── Environment Setup ──────────────────────────────────────────────────────────
+load_dotenv()  # loads DB_* vars from .env into os.environ
+
+DB_DRIVER = os.getenv('DB_DRIVER',   'ODBC Driver 17 for SQL Server')
+DB_SERVER = os.getenv('DB_SERVER',   'localhost')
+DB_PORT = os.getenv('DB_PORT',     '1433')
+DB_DATABASE = os.getenv('DB_DATABASE', 'master')
+DB_USER = os.getenv('DB_USER',     'sa')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'StrongPassw0rd')
+
+
+def get_connection():
+    # NOTE: no spaces inside the braces around the driver name
+    conn_str = (
+        f"Driver={{{DB_DRIVER}}};"
+        f"Server={DB_SERVER},{DB_PORT};"
+        f"Database={DB_DATABASE};"
+        f"UID={DB_USER};"
+        f"PWD={DB_PASSWORD};"
+    )
+    return pyodbc.connect(conn_str)
+
+
+# ─── Flask App Setup ───────────────────────────────────────────────────────────
 app = Flask(__name__)
 
+
+# ─── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
@@ -11,26 +40,52 @@ def index():
 
 @app.route('/api/table_columns')
 def table_columns():
-    # reconnect (or reuse your existing connection)
-    cnxn = pyodbc.connect(
-        f"Driver={{ODBC Driver 17 for SQL Server}};"
-        f"Server={os.getenv('DB_SERVER','localhost')},1433;"
-        f"Database={os.getenv('DB_DATABASE','master')};"
-        f"UID={os.getenv('DB_USER','sa')};"
-        f"PWD={os.getenv('DB_PASSWORD','StrongPassw0rd')};"
-    )
+    cnxn = get_connection()
     cursor = cnxn.cursor()
     cursor.execute("""
         SELECT t.TABLE_NAME, c.COLUMN_NAME
-        FROM INFORMATION_SCHEMA.TABLES t
-        JOIN INFORMATION_SCHEMA.COLUMNS c
-          ON t.TABLE_NAME = c.TABLE_NAME
-        WHERE t.TABLE_TYPE = 'BASE TABLE'
-        ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION
+          FROM INFORMATION_SCHEMA.TABLES AS t
+          JOIN INFORMATION_SCHEMA.COLUMNS AS c
+            ON t.TABLE_NAME = c.TABLE_NAME
+         WHERE t.TABLE_TYPE = 'BASE TABLE'
+         ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION
     """)
-    table_map = {}
-    for table, column in cursor.fetchall():
-        table_map.setdefault(table, []).append(column)
+    tables = {}
+    for tbl, col in cursor.fetchall():
+        tables.setdefault(tbl, []).append(col)
     cursor.close()
     cnxn.close()
-    return jsonify(table_map)
+    return jsonify(tables)
+
+
+@app.route('/api/table/<table_name>')
+def get_table(table_name):
+    cnxn = get_connection()
+    cursor = cnxn.cursor()
+    try:
+        cursor.execute(f"SELECT * FROM [{table_name}]")
+    except Exception:
+        cursor.close()
+        cnxn.close()
+        return jsonify({'error': 'Invalid table name'}), 400
+
+    cols = [col[0] for col in cursor.description]
+    raw_rows = cursor.fetchall()
+    serialized = []
+    for row in raw_rows:
+        new_row = []
+        for cell in row:
+            if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
+                new_row.append(cell.isoformat())
+            else:
+                new_row.append(cell)
+        serialized.append(new_row)
+
+    cursor.close()
+    cnxn.close()
+    return jsonify({'columns': cols, 'rows': serialized})
+
+
+# ─── Run Server ────────────────────────────────────────────────────────────────
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

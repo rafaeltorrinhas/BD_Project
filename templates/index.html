@@ -2,96 +2,98 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Database Table Browser</title>
+    <title>FADU Project</title>
     <style>
       body {
         font-family: sans-serif;
         padding: 1rem;
       }
-      input {
-        padding: 0.5rem;
+      select,
+      table {
+        margin: 1rem 0;
+      }
+      table {
+        border-collapse: collapse;
         width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 1rem;
       }
-      .table-list {
-        list-style: none;
-        padding: 0;
-      }
-      .table-item {
-        margin-bottom: 1rem;
+      th,
+      td {
         border: 1px solid #ddd;
         padding: 0.5rem;
-        border-radius: 4px;
+        text-align: left;
       }
-      .table-name {
-        font-weight: bold;
-      }
-      .columns {
-        margin: 0.5rem 0 0 1rem;
-        color: #555;
+      th {
+        background: #f4f4f4;
       }
     </style>
   </head>
   <body>
-    <h1>Database Tables</h1>
-    <input
-      type="text"
-      id="filterInput"
-      placeholder="Type a column name to filter tables…"
-      oninput="renderTables()"
-    />
-    <ul id="tables" class="table-list"></ul>
+    <h1>Pick a Table</h1>
+    <select id="tableSelect">
+      <option value="">— select a table —</option>
+    </select>
+
+    <div id="tableContainer"></div>
 
     <script>
       let tableMap = {};
 
+      // 1) load table list
       async function fetchTables() {
         const res = await fetch("/api/table_columns");
-        if (!res.ok) {
-          document.getElementById("tables").innerHTML =
-            '<li style="color:red">Failed to load table list</li>';
-          return;
-        }
         tableMap = await res.json();
-        renderTables();
+
+        const sel = document.getElementById("tableSelect");
+        Object.keys(tableMap).forEach((tbl) => {
+          const opt = new Option(tbl, tbl);
+          sel.appendChild(opt);
+        });
+
+        sel.addEventListener("change", () => {
+          if (sel.value) loadTable(sel.value);
+          else document.getElementById("tableContainer").innerHTML = "";
+        });
       }
 
-      function renderTables() {
-        const filter = document
-          .getElementById("filterInput")
-          .value.trim()
-          .toLowerCase();
-        const list = document.getElementById("tables");
-        list.innerHTML = "";
+      async function loadTable(table) {
+        const res = await fetch("/api/table/" + encodeURIComponent(table));
+        if (!res.ok) {
+          document.getElementById("tableContainer").innerHTML =
+            '<p style="color:red">Failed to load table data.</p>';
+          return;
+        }
+        const { columns, rows } = await res.json();
+        renderTable(columns, rows);
+      }
 
-        Object.entries(tableMap).forEach(([table, columns]) => {
-          if (
-            filter &&
-            !columns.some((c) => c.toLowerCase().includes(filter))
-          ) {
-            return;
-          }
-
-          const li = document.createElement("li");
-          li.className = "table-item";
-
-          const name = document.createElement("div");
-          name.className = "table-name";
-          name.textContent = table;
-
-          const cols = document.createElement("ul");
-          cols.className = "columns";
-          columns.forEach((col) => {
-            const ci = document.createElement("li");
-            ci.textContent = col;
-            cols.appendChild(ci);
-          });
-
-          li.appendChild(name);
-          li.appendChild(cols);
-          list.appendChild(li);
+      function renderTable(columns, rows) {
+        const container = document.getElementById("tableContainer");
+        const tbl = document.createElement("table");
+        // header
+        const thead = document.createElement("thead");
+        const hr = document.createElement("tr");
+        columns.forEach((c) => {
+          const th = document.createElement("th");
+          th.textContent = c;
+          hr.appendChild(th);
         });
+        thead.appendChild(hr);
+        tbl.appendChild(thead);
+        // body
+        const tbody = document.createElement("tbody");
+        rows.forEach((row) => {
+          const tr = document.createElement("tr");
+          row.forEach((cell) => {
+            const td = document.createElement("td");
+            td.textContent = cell === null ? "" : cell;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+
+        container.innerHTML = "";
+        container.appendChild(tbl);
       }
 
       window.addEventListener("DOMContentLoaded", fetchTables);
