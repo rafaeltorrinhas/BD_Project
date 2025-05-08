@@ -90,26 +90,23 @@ def get_table(table_name):
     return jsonify({'columns': cols, 'rows': serialized})
 
 
-@app.route('/api/Uni/<uni_name>')
-def get_uni(uni_name):
+@app.route('/api/Uni/')
+def get_uni():
     cnxn = get_connection()
     cursor = cnxn.cursor()
     try:
         cursor.execute(
             '''
             SELECT 
-                uni.Acc_id,
-                uni.Name, 
-                COUNT(*) as MedalCount
+            uni.Name AS UniversityName,
+            uni.Address AS UniversityAddress,
+            acc.Name AS AssociationName,
+            acc.Sigla AS AssociationSigla
             FROM 
-                FADU_UNIVERSIDADE uni
+            FADU_UNIVERSIDADE uni
             JOIN 
-                FADU_MEDALHAS med 
-                ON med.Acc_id = uni.Acc_id
-            GROUP BY 
-                uni.Name, uni.Acc_id
-            ORDER BY 
-                uni.Acc_id ASC
+            FADU_ASSOCIAÇAO_ACADEMICA acc
+            ON uni.Ass_Id = acc.Id
             '''
         )
     except Exception as e:
@@ -117,9 +114,9 @@ def get_uni(uni_name):
         cnxn.close()
         return jsonify({'error': str(e)}), 400
 
-    cols = [col[0] for col in cursor.description]   
+    cols = [col[0] for col in cursor.description]
     raw_rows = cursor.fetchall()
-    
+
     serialized = []
     for row in raw_rows:
         new_row = []
@@ -137,6 +134,63 @@ def get_uni(uni_name):
     print(f"Rows: {serialized}")
 
     return jsonify({'columns': cols, 'rows': serialized})
+
+
+@app.route('/api/Ass/')
+def get_ass():
+    cnxn = get_connection()
+    cursor = cnxn.cursor()
+    try:
+        cursor.execute(
+            '''
+            SELECT 
+                acc.Id AS AssociationId,
+                acc.Name AS AssociationName,
+                acc.Sigla AS AssociationSigla,
+                STRING_AGG(mod.Name, ', ') AS Modalidades,
+                SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS OuroCount,
+                SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS PrataCount,
+                SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS BronzeCount
+
+            FROM 
+                FADU_ASSOCIAÇAO_ACADEMICA acc
+            LEFT JOIN 
+                FADU_ASSMODALIDADE ma ON acc.Id = ma.Ass_Id
+            LEFT JOIN 
+                FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
+            LEFT JOIN 
+                FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
+            LEFT JOIN 
+                FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
+            GROUP BY 
+                acc.Id, acc.Name, acc.Sigla
+            ORDER BY 
+                acc.Id
+            '''
+        )
+    except Exception as e:
+        cursor.close()
+        cnxn.close()
+        return jsonify({'error': str(e)}), 400
+
+    cols = [col[0] for col in cursor.description]
+    raw_rows = cursor.fetchall()
+
+    serialized = []
+    for row in raw_rows:
+        new_row = []
+        for cell in row:
+            if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
+                new_row.append(cell.isoformat())
+            else:
+                new_row.append(cell)
+        serialized.append(new_row)
+
+    cursor.close()
+    cnxn.close()
+
+    return jsonify({'columns': cols, 'rows': serialized})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
