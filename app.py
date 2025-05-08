@@ -90,5 +90,53 @@ def get_table(table_name):
     return jsonify({'columns': cols, 'rows': serialized})
 
 
+@app.route('/api/Uni/<uni_name>')
+def get_uni(uni_name):
+    cnxn = get_connection()
+    cursor = cnxn.cursor()
+    try:
+        cursor.execute(
+            '''
+            SELECT 
+                uni.Acc_id,
+                uni.Name, 
+                COUNT(*) as MedalCount
+            FROM 
+                FADU_UNIVERSIDADE uni
+            JOIN 
+                FADU_MEDALHAS med 
+                ON med.Acc_id = uni.Acc_id
+            GROUP BY 
+                uni.Name, uni.Acc_id
+            ORDER BY 
+                uni.Acc_id ASC
+            '''
+        )
+    except Exception as e:
+        cursor.close()
+        cnxn.close()
+        return jsonify({'error': str(e)}), 400
+
+    cols = [col[0] for col in cursor.description]   
+    raw_rows = cursor.fetchall()
+    
+    serialized = []
+    for row in raw_rows:
+        new_row = []
+        for cell in row:
+            if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
+                new_row.append(cell.isoformat())
+            else:
+                new_row.append(cell)
+        serialized.append(new_row)
+
+    cursor.close()
+    cnxn.close()
+
+    print(f"Columns: {cols}")
+    print(f"Rows: {serialized}")
+
+    return jsonify({'columns': cols, 'rows': serialized})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
