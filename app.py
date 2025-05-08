@@ -7,23 +7,30 @@ import pyodbc
 # ─── Environment Setup ──────────────────────────────────────────────────────────
 load_dotenv()  # loads DB_* vars from .env into os.environ
 
-DB_DRIVER = os.getenv('DB_DRIVER',   'ODBC Driver 17 for SQL Server')
-DB_SERVER = os.getenv('DB_SERVER',   'localhost')
-DB_PORT = os.getenv('DB_PORT',     '1433')
-DB_DATABASE = os.getenv('DB_DATABASE', 'master')
-DB_USER = os.getenv('DB_USER',     'sa')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'StrongPassw0rd')
+DB_DRIVER = os.getenv('DB_DRIVER')
+DB_SERVER = os.getenv('DB_SERVER')
+DB_PORT = os.getenv('DB_PORT')
+DB_DATABASE = os.getenv('DB_DATABASE')
+DB_USER = os.getenv('DB_USER',     'none')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'none')
 
 
 def get_connection():
     # NOTE: no spaces inside the braces around the driver name
-    conn_str = (
-        f"Driver={{{DB_DRIVER}}};"
-        f"Server={DB_SERVER},{DB_PORT};"
-        f"Database={DB_DATABASE};"
-        f"UID={DB_USER};"
-        f"PWD={DB_PASSWORD};"
-    )
+    if(DB_USER=='none'):
+        conn_str=("Driver={ODBC Driver 17 for SQL Server};"
+                      f"Server={os.getenv('DB_SERVER')};"
+                      f"Database={os.getenv('DB_DATABASE')};"
+                      "Trusted_Connection=yes;"
+        )
+    else:
+        conn_str = (
+            f"Driver={{{DB_DRIVER}}};"
+            f"Server={DB_SERVER},{DB_PORT};"
+            f"Database={DB_DATABASE};"
+            f"UID={DB_USER};"
+            f"PWD={DB_PASSWORD};"
+        )
     return pyodbc.connect(conn_str)
 
 
