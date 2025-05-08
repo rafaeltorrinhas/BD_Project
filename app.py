@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, jsonify
 import pyodbc
 
-# ─── Environment Setup ──────────────────────────────────────────────────────────
-load_dotenv()  # loads DB_* vars from .env into os.environ
+load_dotenv()
 
 DB_DRIVER = os.getenv('DB_DRIVER')
 DB_SERVER = os.getenv('DB_SERVER')
@@ -16,13 +15,13 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', 'none')
 
 
 def get_connection():
-    # NOTE: no spaces inside the braces around the driver name
-    if(DB_USER=='none'):
-        conn_str=("Driver={ODBC Driver 17 for SQL Server};"
-                      f"Server={os.getenv('DB_SERVER')};"
-                      f"Database={os.getenv('DB_DATABASE')};"
-                      "Trusted_Connection=yes;"
-        )
+
+    if (DB_USER == 'none'):
+        conn_str = ("Driver={ODBC Driver 17 for SQL Server};"
+                    f"Server={os.getenv('DB_SERVER')};"
+                    f"Database={os.getenv('DB_DATABASE')};"
+                    "Trusted_Connection=yes;"
+                    )
     else:
         conn_str = (
             f"Driver={{{DB_DRIVER}}};"
@@ -31,14 +30,12 @@ def get_connection():
             f"UID={DB_USER};"
             f"PWD={DB_PASSWORD};"
         )
+
     return pyodbc.connect(conn_str)
 
 
-# ─── Flask App Setup ───────────────────────────────────────────────────────────
 app = Flask(__name__)
 
-
-# ─── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
@@ -93,6 +90,5 @@ def get_table(table_name):
     return jsonify({'columns': cols, 'rows': serialized})
 
 
-# ─── Run Server ────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
