@@ -7,12 +7,12 @@ import pyodbc
 # ─── Environment Setup ──────────────────────────────────────────────────────────
 load_dotenv()  # loads DB_* vars from .env into os.environ
 
-DB_DRIVER = os.getenv('DB_DRIVER',   'ODBC Driver 17 for SQL Server')
-DB_SERVER = os.getenv('DB_SERVER',   'localhost')
-DB_PORT = os.getenv('DB_PORT',     '1433')
-DB_DATABASE = os.getenv('DB_DATABASE', 'master')
-DB_USER = os.getenv('DB_USER',     'sa')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'StrongPassw0rd')
+DB_DRIVER = os.getenv('DB_DRIVER')
+DB_SERVER = os.getenv('DB_SERVER')
+DB_PORT = os.getenv('DB_PORT')
+DB_DATABASE = os.getenv('DB_DATABASE')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 
 def get_connection():
