@@ -33,20 +33,20 @@ def get_connection():
 
     return pyodbc.connect(conn_str)
 
-
 app = Flask(__name__)
-
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-
-def getInfo(querry):
+# acho que o params é o suficiente para parar sql ejection
+def getInfo(query, params=None):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        cursor.execute(querry)
+        if params!=None:
+            cursor.execute(query,params)
+        else:
+            cursor.execute(query)
         cols = [col[0] for col in cursor.description]
         raw_rows = cursor.fetchall()
         serialized = []
@@ -65,7 +65,6 @@ def getInfo(querry):
         cursor.close()
         cnxn.close()
         return jsonify({'error': str(e)}), 400
-
 
 @app.route('/api/table_columns')
 def table_columns():
@@ -86,12 +85,10 @@ def table_columns():
     cnxn.close()
     return jsonify(tables)
 
-
 @app.route('/api/table/<table_name>')
 def get_table(table_name):
     cols,serialized = getInfo(f"SELECT * FROM [{table_name}]")
     return jsonify({'columns': cols, 'rows': serialized})
-
 
 @app.route('/api/Uni/')
 def get_uni():
@@ -113,7 +110,6 @@ def get_uni():
 
 
     return jsonify({'columns': cols, 'rows': serialized})
-
 
 @app.route('/api/Ass/')
 def get_ass():
@@ -148,6 +144,48 @@ def get_ass():
 
     return jsonify({'columns': cols, 'rows': serialized})
 
+@app.route('/api/JogosNames/')
+def get_Jogos():
+    cols,serialized,=    getInfo(
+        '''
+        SELECT 
+    jogo.Id AS GameID, 
+    accCasa.Name AS Casa, 
+    jogo.Resultado AS Resultado, 
+    accOponente.Name AS Oponente 
+FROM FADU_JOGO jogo
+LEFT JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
+LEFT JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2  -- Assuming Equipa_id2 is for the opponent team
+LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
+LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id;
+'''
+    )
+    return jsonify({'columns': cols, 'rows': serialized})
+
+@app.route('/api/Jogos/<GameId>')
+def get_JogoId(GameId):
+    query = f'''
+     SELECT 
+         jogo.Id AS GameID, 
+         accCasa.Name AS Casa,
+         jogo.Resultado AS Resultado, 
+         accOponente.Name AS Oponente, 
+         jogo.Duracao AS Time,
+         Jogo.LocalJogo AS LocalJogo,
+         mod.Name AS Modalidade
+     FROM FADU_JOGO jogo
+     INNER JOIN FADU_MODALIDADE mod ON mod.Id=jogo.Mod_Id
+     INNER JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
+     INNER JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
+     INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
+     INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
+     WHERE jogo.Id = ?
+    '''
+    cols, serialized = getInfo(query,GameId)
+    return jsonify({'columns': cols, 'rows': serialized})
+
+
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
