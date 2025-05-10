@@ -42,6 +42,31 @@ def index():
     return render_template('index.html')
 
 
+def getInfo(querry):
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        cursor.execute(querry)
+        cols = [col[0] for col in cursor.description]
+        raw_rows = cursor.fetchall()
+        serialized = []
+        for row in raw_rows:
+            new_row = []
+            for cell in row:
+                if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
+                    new_row.append(cell.isoformat())
+                else:
+                    new_row.append(cell)
+            serialized.append(new_row)
+        cursor.close()
+        cnxn.close()
+        return cols,serialized
+    except Exception as e:
+        cursor.close()
+        cnxn.close()
+        return jsonify({'error': str(e)}), 400
+
+
 @app.route('/api/table_columns')
 def table_columns():
     cnxn = get_connection()
@@ -64,38 +89,14 @@ def table_columns():
 
 @app.route('/api/table/<table_name>')
 def get_table(table_name):
-    cnxn = get_connection()
-    cursor = cnxn.cursor()
-    try:
-        cursor.execute(f"SELECT * FROM [{table_name}]")
-    except Exception:
-        cursor.close()
-        cnxn.close()
-        return jsonify({'error': 'Invalid table name'}), 400
-
-    cols = [col[0] for col in cursor.description]
-    raw_rows = cursor.fetchall()
-    serialized = []
-    for row in raw_rows:
-        new_row = []
-        for cell in row:
-            if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
-                new_row.append(cell.isoformat())
-            else:
-                new_row.append(cell)
-        serialized.append(new_row)
-
-    cursor.close()
-    cnxn.close()
+    cols,serialized = getInfo(f"SELECT * FROM [{table_name}]")
     return jsonify({'columns': cols, 'rows': serialized})
 
 
 @app.route('/api/Uni/')
 def get_uni():
-    cnxn = get_connection()
-    cursor = cnxn.cursor()
-    try:
-        cursor.execute(
+
+    cols,serialized=getInfo(
             '''
             SELECT 
             uni.Name AS UniversityName,
@@ -109,39 +110,15 @@ def get_uni():
             ON uni.Ass_Id = acc.Id
             '''
         )
-    except Exception as e:
-        cursor.close()
-        cnxn.close()
-        return jsonify({'error': str(e)}), 400
 
-    cols = [col[0] for col in cursor.description]
-    raw_rows = cursor.fetchall()
-
-    serialized = []
-    for row in raw_rows:
-        new_row = []
-        for cell in row:
-            if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
-                new_row.append(cell.isoformat())
-            else:
-                new_row.append(cell)
-        serialized.append(new_row)
-
-    cursor.close()
-    cnxn.close()
-
-    print(f"Columns: {cols}")
-    print(f"Rows: {serialized}")
 
     return jsonify({'columns': cols, 'rows': serialized})
 
 
 @app.route('/api/Ass/')
 def get_ass():
-    cnxn = get_connection()
-    cursor = cnxn.cursor()
-    try:
-        cursor.execute(
+
+    cols,serialized,=    getInfo(
             '''
             SELECT 
                 acc.Id AS AssociationId,
@@ -168,26 +145,6 @@ def get_ass():
                 acc.Id
             '''
         )
-    except Exception as e:
-        cursor.close()
-        cnxn.close()
-        return jsonify({'error': str(e)}), 400
-
-    cols = [col[0] for col in cursor.description]
-    raw_rows = cursor.fetchall()
-
-    serialized = []
-    for row in raw_rows:
-        new_row = []
-        for cell in row:
-            if isinstance(cell, (datetime.date, datetime.time, datetime.datetime)):
-                new_row.append(cell.isoformat())
-            else:
-                new_row.append(cell)
-        serialized.append(new_row)
-
-    cursor.close()
-    cnxn.close()
 
     return jsonify({'columns': cols, 'rows': serialized})
 
