@@ -33,18 +33,22 @@ def get_connection():
 
     return pyodbc.connect(conn_str)
 
+
 app = Flask(__name__)
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 # acho que o params é o suficiente para parar sql ejection
+
+
 def getInfo(query, params=None):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        if params!=None:
-            cursor.execute(query,params)
+        if params != None:
+            cursor.execute(query, params)
         else:
             cursor.execute(query)
         cols = [col[0] for col in cursor.description]
@@ -60,11 +64,12 @@ def getInfo(query, params=None):
             serialized.append(new_row)
         cursor.close()
         cnxn.close()
-        return cols,serialized
+        return cols, serialized
     except Exception as e:
         cursor.close()
         cnxn.close()
         return jsonify({'error': str(e)}), 400
+
 
 @app.route('/api/table_columns')
 def table_columns():
@@ -85,16 +90,18 @@ def table_columns():
     cnxn.close()
     return jsonify(tables)
 
+
 @app.route('/api/table/<table_name>')
 def get_table(table_name):
-    cols,serialized = getInfo(f"SELECT * FROM [{table_name}]")
+    cols, serialized = getInfo(f"SELECT * FROM [{table_name}]")
     return jsonify({'columns': cols, 'rows': serialized})
+
 
 @app.route('/api/Uni/')
 def get_uni():
 
-    cols,serialized=getInfo(
-            '''
+    cols, serialized = getInfo(
+        '''
             SELECT 
             uni.Name AS UniversityName,
             uni.Address AS UniversityAddress,
@@ -106,16 +113,16 @@ def get_uni():
             FADU_ASSOCIAÇAO_ACADEMICA acc
             ON uni.Ass_Id = acc.Id
             '''
-        )
-
+    )
 
     return jsonify({'columns': cols, 'rows': serialized})
+
 
 @app.route('/api/Ass/')
 def get_ass():
 
-    cols,serialized,=    getInfo(
-            '''
+    cols, serialized, =    getInfo(
+        '''
             SELECT 
                 acc.Id AS AssociationId,
                 acc.Name AS AssociationName,
@@ -140,13 +147,14 @@ def get_ass():
             ORDER BY 
                 acc.Id
             '''
-        )
+    )
 
     return jsonify({'columns': cols, 'rows': serialized})
 
-@app.route('/api/JogosNames/')
+
+@app.route('/api/Jogos/')
 def get_Jogos():
-    cols,serialized,=    getInfo(
+    cols, serialized, =    getInfo(
         '''
         SELECT 
     jogo.Id AS GameID, 
@@ -161,6 +169,7 @@ LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.As
 '''
     )
     return jsonify({'columns': cols, 'rows': serialized})
+
 
 @app.route('/api/Jogos/<GameId>')
 def get_Jogo_Id(GameId):
@@ -181,8 +190,8 @@ def get_Jogo_Id(GameId):
      INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
      WHERE jogo.Id = ?
     '''
-    cols, serialized = getInfo(query,GameId)
-    queryTeams =f'''
+    cols, serialized = getInfo(query, GameId)
+    queryTeams = f'''
         SELECT 
             jogo.Id AS GameId, 
             T.TeamType, 
@@ -200,14 +209,12 @@ def get_Jogo_Id(GameId):
         ORDER BY T.TeamType, PlayerName,PlayerId;
     
     '''
-    colsTeams,Teams=getInfo(queryTeams,GameId)
+    colsTeams, Teams = getInfo(queryTeams, GameId)
 
-    
-    
-    return jsonify({'columns': cols, 'rows': serialized,'TeamsCols':colsTeams,'TeamsPlayers':Teams})
+    return jsonify({'columns': cols, 'rows': serialized, 'TeamsCols': colsTeams, 'TeamsPlayers': Teams})
 
 
-@app.route('/api/Fases/')    
+@app.route('/api/Fases/')
 def get_Fases():
     query = f'''
     select * from FADU_FASE
@@ -215,7 +222,8 @@ def get_Fases():
     cols, serialized = getInfo(query)
     return jsonify({'columns': cols, 'rows': serialized})
 
-@app.route('/api/Fases/<FaseId>')    
+
+@app.route('/api/Fases/<FaseId>')
 def get_Fases_Id(FaseId):
     query = f'''
     select fase.Id AS FaseId,fase.[Name] AS FaseName,
@@ -232,8 +240,9 @@ def get_Fases_Id(FaseId):
 	join FADU_JOGO jogo ON jogo.Fase_Id=fase.Id
     where fase.Id = ?
     '''
-    cols, serialized = getInfo(query,FaseId)
+    cols, serialized = getInfo(query, FaseId)
     return jsonify({'columns': cols, 'rows': serialized})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
