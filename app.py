@@ -163,16 +163,16 @@ LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.As
     return jsonify({'columns': cols, 'rows': serialized})
 
 @app.route('/api/Jogos/<GameId>')
-def get_JogoId(GameId):
+def get_Jogo_Id(GameId):
     query = f'''
      SELECT 
          jogo.Id AS GameID, 
-         accCasa.Name AS Casa,
+         accCasa.[Name] AS Casa,
          jogo.Resultado AS Resultado, 
-         accOponente.Name AS Oponente, 
+         accOponente.[Name] AS Oponente, 
          jogo.Duracao AS Time,
          Jogo.LocalJogo AS LocalJogo,
-         mod.Name AS Modalidade
+         mod.[Name] AS Modalidade
      FROM FADU_JOGO jogo
      INNER JOIN FADU_MODALIDADE mod ON mod.Id=jogo.Mod_Id
      INNER JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
@@ -182,10 +182,58 @@ def get_JogoId(GameId):
      WHERE jogo.Id = ?
     '''
     cols, serialized = getInfo(query,GameId)
-    return jsonify({'columns': cols, 'rows': serialized})
-
+    queryTeams =f'''
+        SELECT 
+            jogo.Id AS GameId, 
+            T.TeamType, 
+            T.TeamId, 
+            person.[Name] AS PlayerName,
+            person.Id AS PlayerId
+        FROM FADU_JOGO jogo
+        CROSS APPLY (VALUES 
+            ('Host', jogo.Equipa_id1), 
+            ('Opponent', jogo.Equipa_id2)
+        ) AS T(TeamType, TeamId)
+        JOIN FADU_PERSONEQUIPA personTeam ON personTeam.EQUIPA_Id = T.TeamId
+        JOIN FADU_PERSON person ON person.Id = personTeam.Person_Id
+        WHERE jogo.Id = ?
+        ORDER BY T.TeamType, PlayerName,PlayerId;
+    
+    '''
+    colsTeams,Teams=getInfo(queryTeams,GameId)
 
     
+    
+    return jsonify({'columns': cols, 'rows': serialized,'TeamsCols':colsTeams,'TeamsPlayers':Teams})
+
+
+@app.route('/api/Fases/')    
+def get_Fases():
+    query = f'''
+    select * from FADU_FASE
+    '''
+    cols, serialized = getInfo(query)
+    return jsonify({'columns': cols, 'rows': serialized})
+
+@app.route('/api/Fases/<FaseId>')    
+def get_Fases_Id(FaseId):
+    query = f'''
+    select fase.Id AS FaseId,fase.[Name] AS FaseName,
+	ass.Id AS AssId,ass.[Name] AS AssName,
+	ass.Sigla as AssSigla,
+	ass.Org_Id AS AssOrgID, 
+	jogo.Id AS GameID, 
+    jogo.Equipa_id1 AS Casa,
+    jogo.Resultado AS Resultado, 
+    jogo.Equipa_id2 AS Oponente 
+	from FADU_FASE fase
+	join FADU_ORGANIZACAO org on org.Fase_Id = fase.id
+	join FADU_ASSOCIAÇAO_ACADEMICA ass ON ass.Org_Id=org.Id
+	join FADU_JOGO jogo ON jogo.Fase_Id=fase.Id
+    where fase.Id = ?
+    '''
+    cols, serialized = getInfo(query,FaseId)
+    return jsonify({'columns': cols, 'rows': serialized})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
