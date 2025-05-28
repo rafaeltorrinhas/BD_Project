@@ -177,28 +177,29 @@ LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.As
 
 @app.route('/Jogos/<GameId>')
 def get_Jogo_Id(GameId):
+    # Query to get the game details
     query = f'''
     SELECT 
-         jogo.Id AS GameID, 
+         jogo.Id AS Id, 
          accCasa.[Name] AS Casa,
          jogo.Resultado AS Resultado, 
          accOponente.[Name] AS Oponente, 
-         jogo.Duracao AS Time,
-         Jogo.LocalJogo AS LocalJogo,
+         jogo.Duracao AS Tempo,
+         Jogo.LocalJogo AS Local,
          mod.[Name] AS Modalidade
      FROM FADU_JOGO jogo
      INNER JOIN FADU_MODALIDADE mod ON mod.Id=jogo.Mod_Id
      INNER JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
      INNER JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
      INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
-     INNER JOIN FADU_ASSOCIAÇÃO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
+     INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
      WHERE jogo.Id = ?
     '''
     cols, serialized = getInfo(query, GameId)
 
+    # Query to get the team player details
     queryTeams = f'''
         SELECT 
-            jogo.Id AS GameId, 
             T.TeamType, 
             T.TeamId, 
             person.[Name] AS PlayerName,
@@ -215,7 +216,17 @@ def get_Jogo_Id(GameId):
     '''
     colsTeams, Teams = getInfo(queryTeams, GameId)
 
-    return render_template('jogoDetalhes.html', jogoId=GameId, columns=cols, rows=serialized, teamsColumns=colsTeams, teamsPlayers=Teams)
+    # Get the game result (from the `Resultado` field)
+    game_result = serialized[0][2] if serialized else "Resultado não disponível"
+
+    # Pass the data to the template
+    return render_template('jogoDetalhes.html',
+                           jogoId=GameId,
+                           columns=cols,
+                           rows=serialized,
+                           teamsColumns=colsTeams,
+                           teamsPlayers=Teams,
+                           game_result=game_result)
 
 
 @app.route('/Fases/')

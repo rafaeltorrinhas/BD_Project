@@ -35,7 +35,7 @@ def get_connection():
     return pyodbc.connect(conn_str)
 
 
-@app.route('/delete_university/<int:university_id>', methods=['POST'])
+@app.route('/delete_university/<id>', methods=['POST'])
 def delete_university(university_id):
     # Connect to the database and delete the university by its ID
     try:

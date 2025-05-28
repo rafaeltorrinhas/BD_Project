@@ -42,6 +42,9 @@
       th {
         background: #f4f4f4;
       }
+      .single-row-table {
+        margin-bottom: 1rem;
+      }
     </style>
   </head>
   <body>
@@ -53,16 +56,39 @@
         <option value="/Ass">Associações</option>
         <option value="/Jogos">Jogos</option>
         <option value="/Fases" selected>Fases</option>
-        <option value="/Inscritos" selected>Inscritos</option>
+        <option value="/Inscritos">Inscritos</option>
       </select>
     </div>
 
     <div class="content">
       <h2>Detalhes da Fase: {{ faseName }}</h2>
+
+      <!-- New Table for the first 3 columns -->
+      <table class="single-row-table">
+        <thead>
+          <tr>
+            <th>{{ columns[0] }}</th>
+            <th>{{ columns[1] }}</th>
+            <th>{{ columns[2] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ rows[0][0] }}</td>
+            <!-- Id -->
+            <td>{{ rows[0][1] }}</td>
+            <!-- FaseName -->
+            <td>{{ rows[0][2] }}</td>
+            <!-- AssociacaoOrg -->
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Main Table for the rest of the data -->
       <table>
         <thead>
           <tr>
-            {% for col in columns %}
+            {% for col in columns[3:] %}
             <th>{{ col }}</th>
             {% endfor %}
             <th>Ações</th>
@@ -71,7 +97,7 @@
         <tbody>
           {% for row in rows %}
           <tr>
-            {% for cell in row %}
+            {% for cell in row[3:] %}
             <td>{{ cell }}</td>
             {% endfor %}
             <td>
