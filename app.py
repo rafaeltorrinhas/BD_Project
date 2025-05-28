@@ -158,19 +158,27 @@ def get_ass():
 
 @app.route('/Jogos/')
 def get_Jogos():
-    cols, serialized, =    getInfo(
+    cols, serialized = getInfo(
         '''
         SELECT 
-    jogo.Id AS ID, 
-    accCasa.Name AS Casa, 
-    jogo.Resultado AS Resultado, 
-    accOponente.Name AS Fora 
-FROM FADU_JOGO jogo
-LEFT JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
-LEFT JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2  -- Assuming Equipa_id2 is for the opponent team
-LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
-LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id;
-'''
+            jogo.Id AS ID, 
+            accCasa.Name AS Casa, 
+            jogo.Resultado AS Resultado, 
+            accOponente.Name AS Fora,
+            mod.Name AS Modalidade  -- Add Modality Name
+        FROM 
+            FADU_JOGO jogo
+        LEFT JOIN 
+            FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
+        LEFT JOIN 
+            FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
+        LEFT JOIN 
+            FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
+        LEFT JOIN 
+            FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
+        LEFT JOIN 
+            FADU_MODALIDADE mod ON mod.Id = jogo.Mod_Id
+        '''
     )
     return render_template('jogos.html', title='Jogos', columns=cols, rows=serialized)
 
@@ -405,6 +413,13 @@ def getAtletas():
                            coaches=coaches_data,
                            referees_columns=referees_cols,
                            referees=referees_data)
+
+
+@app.route('/api/Inscritos')
+def getInscritos():
+    query = '''select * from FADU_PERSON'''
+    info = getInfo(query)
+    return jsonify(info)
 
 
 if __name__ == '__main__':
