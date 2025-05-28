@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Jogos</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      .navbar {
+        background-color: #2c3e50;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        color: white;
+      }
+      .navbar h1 {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+      .navbar select {
+        margin-left: auto;
+        padding: 0.5rem;
+        font-size: 1rem;
+      }
+      .content {
+        padding: 2rem;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+        text-align: left;
+      }
+      th {
+        background: #f4f4f4;
+      }
+      button {
+        margin-right: 0.5rem;
+        padding: 0.3rem 0.6rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>FADU Project</h1>
+      <select id="tableSelect">
+        <option value="">— Selecionar Vista —</option>
+        <option value="/Uni">Universidades</option>
+        <option value="/Ass">Associações</option>
+        <option value="/Jogos" selected>Jogos</option>
+        <option value="/Fases">Fases</option>
+        <option value="/Inscritos">Inscritos</option>
+      </select>
+    </div>
+
+    <div class="content">
+      <h2>Jogos</h2>
+      <table>
+        <thead>
+          <tr>
+            {% for col in columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            {% for cell in row %}
+            <td>{{ cell }}</td>
+            {% endfor %}
+            <td>
+              <button onclick="verDetalhes('{{ row[0] }}')">
+                Ver Detalhes
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      document
+        .getElementById("tableSelect")
+        .addEventListener("change", function () {
+          const path = this.value;
+          if (path) {
+            window.location.href = path;
+          }
+        });
+
+      function verDetalhes(id) {
+        window.location.href = `/Jogos/${id}`;
+      }
+    </script>
+  </body>
+</html>

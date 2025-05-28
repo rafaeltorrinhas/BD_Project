@@ -47,12 +47,15 @@ def getInfo(query, params=None):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        if params != None:
-            cursor.execute(query, params)
+        if params is not None:
+            cursor.execute(query, params)  # Ensure params is passed as a tuple
         else:
             cursor.execute(query)
+
+        # Collect columns and rows
         cols = [col[0] for col in cursor.description]
         raw_rows = cursor.fetchall()
+
         serialized = []
         for row in raw_rows:
             new_row = []
@@ -62,13 +65,13 @@ def getInfo(query, params=None):
                 else:
                     new_row.append(cell)
             serialized.append(new_row)
+
         cursor.close()
         cnxn.close()
         return cols, serialized
     except Exception as e:
-        cursor.close()
-        cnxn.close()
-        return jsonify({'error': str(e)}), 400
+        print(f"Error: {e}")
+        return [], []
 
 
 @app.route('/api/table_columns')
@@ -97,45 +100,46 @@ def get_table(table_name):
     return jsonify({'columns': cols, 'rows': serialized})
 
 
-@app.route('/api/Uni/')
+@app.route('/Uni/')
 def get_uni():
 
     cols, serialized = getInfo(
         '''
             SELECT 
-            uni.Name AS UniversityName,
-            uni.Address AS UniversityAddress,
-            acc.Name AS AssociationName,
-            acc.Sigla AS AssociationSigla
+            uni.Name AS Nome,
+            uni.Address AS Endereço,
+            ass.Id as IdAssociação,
+            ass.Name AS NomeAssociação,
+            ass.Sigla AS SiglaAssociação
             FROM 
             FADU_UNIVERSIDADE uni
             JOIN 
-            FADU_ASSOCIAÇAO_ACADEMICA acc
-            ON uni.Ass_Id = acc.Id
+            FADU_ASSOCIAÇAO_ACADEMICA ass
+            ON uni.Ass_Id = ass.Id
             '''
     )
 
-    return jsonify({'columns': cols, 'rows': serialized})
+    return render_template('uni.html', title='Universidades', columns=cols, rows=serialized)
 
 
-@app.route('/api/Ass/')
+@app.route('/Ass/')
 def get_ass():
 
     cols, serialized, =    getInfo(
         '''
             SELECT 
-                acc.Id AS AssociationId,
-                acc.Name AS AssociationName,
-                acc.Sigla AS AssociationSigla,
+                ass.Id AS Id,
+                ass.Name AS Nome,
+                ass.Sigla AS Sigla,
                 STRING_AGG(mod.Name, ', ') AS Modalidades,
-                SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS OuroCount,
-                SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS PrataCount,
-                SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS BronzeCount
+                SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS Ouro,
+                SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
+                SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
 
             FROM 
-                FADU_ASSOCIAÇAO_ACADEMICA acc
+                FADU_ASSOCIAÇAO_ACADEMICA ass
             LEFT JOIN 
-                FADU_ASSMODALIDADE ma ON acc.Id = ma.Ass_Id
+                FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
             LEFT JOIN 
                 FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
             LEFT JOIN 
@@ -143,24 +147,24 @@ def get_ass():
             LEFT JOIN 
                 FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
             GROUP BY 
-                acc.Id, acc.Name, acc.Sigla
+                ass.Id, ass.Name, ass.Sigla
             ORDER BY 
-                acc.Id
+                ass.Id
             '''
     )
 
-    return jsonify({'columns': cols, 'rows': serialized})
+    return render_template('ass.html', title='Associações', columns=cols, rows=serialized)
 
 
-@app.route('/api/Jogos/')
+@app.route('/Jogos/')
 def get_Jogos():
     cols, serialized, =    getInfo(
         '''
         SELECT 
-    jogo.Id AS GameID, 
+    jogo.Id AS ID, 
     accCasa.Name AS Casa, 
     jogo.Resultado AS Resultado, 
-    accOponente.Name AS Oponente 
+    accOponente.Name AS Fora 
 FROM FADU_JOGO jogo
 LEFT JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
 LEFT JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2  -- Assuming Equipa_id2 is for the opponent team
@@ -168,13 +172,13 @@ LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
 LEFT JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id;
 '''
     )
-    return jsonify({'columns': cols, 'rows': serialized})
+    return render_template('jogos.html', title='Jogos', columns=cols, rows=serialized)
 
 
-@app.route('/api/Jogos/<GameId>')
+@app.route('/Jogos/<GameId>')
 def get_Jogo_Id(GameId):
     query = f'''
-     SELECT 
+    SELECT 
          jogo.Id AS GameID, 
          accCasa.[Name] AS Casa,
          jogo.Resultado AS Resultado, 
@@ -187,10 +191,11 @@ def get_Jogo_Id(GameId):
      INNER JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
      INNER JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
      INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
-     INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
+     INNER JOIN FADU_ASSOCIAÇÃO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
      WHERE jogo.Id = ?
     '''
     cols, serialized = getInfo(query, GameId)
+
     queryTeams = f'''
         SELECT 
             jogo.Id AS GameId, 
@@ -206,42 +211,189 @@ def get_Jogo_Id(GameId):
         JOIN FADU_PERSONEQUIPA personTeam ON personTeam.EQUIPA_Id = T.TeamId
         JOIN FADU_PERSON person ON person.Id = personTeam.Person_Id
         WHERE jogo.Id = ?
-        ORDER BY T.TeamType, PlayerName,PlayerId;
-    
+        ORDER BY T.TeamType, PlayerName, PlayerId;
     '''
     colsTeams, Teams = getInfo(queryTeams, GameId)
 
-    return jsonify({'columns': cols, 'rows': serialized, 'TeamsCols': colsTeams, 'TeamsPlayers': Teams})
+    return render_template('jogoDetalhes.html', jogoId=GameId, columns=cols, rows=serialized, teamsColumns=colsTeams, teamsPlayers=Teams)
 
 
-@app.route('/api/Fases/')
+@app.route('/Fases/')
 def get_Fases():
     query = f'''
     select * from FADU_FASE
     '''
     cols, serialized = getInfo(query)
-    return jsonify({'columns': cols, 'rows': serialized})
+    return render_template('fases.html', title='Fases', columns=cols, rows=serialized)
 
 
-@app.route('/api/Fases/<FaseId>')
+@app.route('/Fases/<FaseId>')
 def get_Fases_Id(FaseId):
     query = f'''
-    select fase.Id AS FaseId,fase.[Name] AS FaseName,
-	ass.Id AS AssId,ass.[Name] AS AssName,
-	ass.Sigla as AssSigla,
-	ass.Org_Id AS AssOrgID, 
-	jogo.Id AS GameID, 
+    select fase.Id as Id ,
+    fase.[Name] as FaseName,
+    ass.[Name] AS AssociacaoOrg, 
+    jogo.Id AS GameID, 
     jogo.Equipa_id1 AS Casa,
     jogo.Resultado AS Resultado, 
-    jogo.Equipa_id2 AS Oponente 
-	from FADU_FASE fase
-	join FADU_ORGANIZACAO org on org.Fase_Id = fase.id
-	join FADU_ASSOCIAÇAO_ACADEMICA ass ON ass.Org_Id=org.Id
-	join FADU_JOGO jogo ON jogo.Fase_Id=fase.Id
+    jogo.Equipa_id2 AS Fora 
+    from FADU_FASE fase
+    join FADU_ORGANIZACAO org on org.Fase_Id = fase.id
+    join FADU_ASSOCIAÇAO_ACADEMICA ass ON ass.Org_Id=org.Id
+    join FADU_JOGO jogo ON jogo.Fase_Id=fase.Id
     where fase.Id = ?
     '''
     cols, serialized = getInfo(query, FaseId)
-    return jsonify({'columns': cols, 'rows': serialized})
+
+    faseName = serialized[0][1] if serialized else "Fase desconhecida ou sem jogos."
+
+    return render_template('faseDetalhes.html', faseName=faseName, columns=cols, rows=serialized)
+
+
+@app.route('/Ass/<AssId>')
+def get_Ass_Id(AssId):
+    # Query to retrieve association details
+    query = f'''
+    SELECT 
+        ass.Id AS Id,
+        ass.Name AS Nome,
+        ass.Sigla AS Sigla,
+        STRING_AGG(mod.Name, ', ') AS Modalidades
+    FROM 
+        FADU_ASSOCIAÇAO_ACADEMICA ass
+    LEFT JOIN 
+        FADU_ASSMODALIDADE am ON ass.Id = am.Ass_Id
+    LEFT JOIN 
+        FADU_MODALIDADE mod ON am.Mod_Id = mod.Id
+    WHERE ass.Id = ?
+    GROUP BY 
+        ass.Id, ass.Name, ass.Sigla;
+    '''
+
+    # Query for medals
+    medals_query = f'''
+    SELECT 
+        tm.Type AS Tipo,
+        med.Year AS Ano
+    FROM 
+        FADU_MEDALHAS med
+    LEFT JOIN 
+        FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
+    WHERE med.Ass_Id = ?
+    ORDER BY med.Year, tm.Type;
+    '''
+
+    # Queries for athletes, coaches, and referees
+    athletes_query = f'''
+    SELECT 
+        person.Id AS Person_Id,
+        person.Name AS Athlete_Name
+    FROM 
+        FADU_ATLETA atle
+    JOIN 
+        FADU_PERSON person ON person.Id = atle.Person_Id
+    WHERE person.Ass_Id = ?
+    '''
+    coaches_query = f'''
+    SELECT 
+        person.Id AS Person_Id,
+        person.Name AS Coach_Name
+    FROM 
+        FADU_TREINADOR coach
+    JOIN 
+        FADU_PERSON person ON person.Id = coach.Person_Id
+    WHERE person.Ass_Id = ?
+    '''
+    referees_query = f'''
+    SELECT 
+        person.Id AS Person_Id,
+        person.Name AS Referee_Name
+    FROM 
+        FADU_ARBITRO arb
+    JOIN 
+        FADU_PERSON person ON person.Id = arb.Person_Id
+    WHERE person.Ass_Id = ?
+    '''
+
+    # Execute the queries and get the results
+    cols, association_data = getInfo(query, (AssId,))
+    medals_cols, medals_data = getInfo(medals_query, (AssId,))
+    athletes_cols, athletes_data = getInfo(athletes_query, (AssId,))
+    coaches_cols, coaches_data = getInfo(coaches_query, (AssId,))
+    referees_cols, referees_data = getInfo(referees_query, (AssId,))
+
+    # Process athletes, coaches, and referees data
+    # Only extract the Name (second element of the tuple)
+    athletes_data = [athlete[1]
+                     for athlete in athletes_data] if athletes_data else []
+    coaches_data = [coach[1] for coach in coaches_data] if coaches_data else []
+    referees_data = [referee[1]
+                     for referee in referees_data] if referees_data else []
+
+    # Association name (use the first row, which should contain the association name)
+    assName = association_data[0][1] if association_data else "Associação desconhecida"
+
+    # Return the rendered template with all the necessary data
+    return render_template('assDetalhes.html',
+                           AssName=assName,
+                           columns=cols,
+                           rows=association_data,
+                           medals_columns=medals_cols,
+                           medals_rows=medals_data,
+                           athletes_columns=athletes_cols,
+                           athletes=athletes_data,
+                           coaches=coaches_data,
+                           referees=referees_data)
+
+
+@app.route('/Inscritos')
+def getAtletas():
+    # Query for all athletes
+    athletes_query = '''
+    SELECT 
+        person.Id AS Person_Id,
+        person.Name AS Athlete_Name
+    FROM 
+        FADU_ATLETA atle
+    JOIN 
+        FADU_PERSON person ON person.Id = atle.Person_Id
+    '''
+
+    # Query for all coaches
+    coaches_query = '''
+    SELECT 
+        person.Id AS Person_Id,
+        person.Name AS Coach_Name
+    FROM 
+        FADU_TREINADOR coach
+    JOIN 
+        FADU_PERSON person ON person.Id = coach.Person_Id
+    '''
+
+    # Query for all referees
+    referees_query = '''
+    SELECT 
+        person.Id AS Person_Id,
+        person.Name AS Referee_Name
+    FROM 
+        FADU_ARBITRO arb
+    JOIN 
+        FADU_PERSON person ON person.Id = arb.Person_Id
+    '''
+
+    # Execute the queries and get the results
+    athletes_cols, athletes_data = getInfo(athletes_query)
+    coaches_cols, coaches_data = getInfo(coaches_query)
+    referees_cols, referees_data = getInfo(referees_query)
+
+    # Return the rendered template with all the necessary data
+    return render_template('inscritos.html',
+                           athletes_columns=athletes_cols,
+                           athletes=athletes_data,
+                           coaches_columns=coaches_cols,
+                           coaches=coaches_data,
+                           referees_columns=referees_cols,
+                           referees=referees_data)
 
 
 if __name__ == '__main__':

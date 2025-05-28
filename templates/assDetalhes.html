@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Detalhes da Associação</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      .navbar {
+        background-color: #2c3e50;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        color: white;
+      }
+      .navbar h1 {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+      .navbar select {
+        margin-left: auto;
+        padding: 0.5rem;
+        font-size: 1rem;
+      }
+      .content {
+        padding: 2rem;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+        text-align: left;
+      }
+      th {
+        background: #f4f4f4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>FADU Project</h1>
+      <select id="tableSelect">
+        <option value="">— Selecionar Vista —</option>
+        <option value="/Uni">Universidades</option>
+        <option value="/Ass" selected>Associações</option>
+        <option value="/Jogos">Jogos</option>
+        <option value="/Fases">Fases</option>
+        <option value="/Inscritos" >Inscritos</option>
+      </select>
+    </div>
+
+    <div class="content">
+      <h2>Detalhes da Associação: {{ AssName }}</h2>
+
+      <!-- General Association Info Table -->
+      <h3>Informações da Associação</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>{{ columns[0] }}</th>
+            <th>{{ columns[1] }}</th>
+            <th>{{ columns[2] }}</th>
+            <th>{{ columns[3] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+            <td>{{ row[3] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Medals Table -->
+      <h3>Medalhas</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>{{ medals_columns[0] }}</th>
+            <th>{{ medals_columns[1] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for medal in medals_rows %}
+          <tr>
+            <td>{{ medal[0] }}</td>
+            <!-- Medal Type -->
+            <td>{{ medal[1] }}</td>
+            <!-- Year -->
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Athletes Table -->
+      <h3>Atletas</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome do Atleta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for athlete in athletes %}
+          <tr>
+            <td>{{ athlete }}</td>
+            <!-- Display only the name -->
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Coaches Table -->
+      <h3>Treinadores</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome do Treinador</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for coach in coaches %}
+          <tr>
+            <td>{{ coach }}</td>
+            <!-- Display only the name -->
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Referees Table -->
+      <h3>Árbitros</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome do Árbitro</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for referee in referees %}
+          <tr>
+            <td>{{ referee }}</td>
+            <!-- Display only the name -->
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      document
+        .getElementById("tableSelect")
+        .addEventListener("change", function () {
+          const path = this.value;
+          if (path) {
+            window.location.href = path;
+          }
+        });
+    </script>
+  </body>
+</html>
