@@ -58,7 +58,7 @@
         <option value="/Ass">Associações</option>
         <option value="/Jogos">Jogos</option>
         <option value="/Fases">Fases</option>
-        <option value="/Inscritos" >Inscritos</option>
+        <option value="/Inscritos">Inscritos</option>
       </select>
     </div>
 
@@ -83,6 +83,18 @@
               <button onclick="verDetalhes('{{ row[2] }}')">
                 Ver Associação
               </button>
+              <form
+                action="/delete_university/{{ row[2] }}"
+                method="POST"
+                style="display: inline"
+              >
+                <button
+                  type="submit"
+                  onclick="return confirm('Tem a certeza que quer apagar esta universidade?')"
+                >
+                  Apagar
+                </button>
+              </form>
             </td>
           </tr>
           {% endfor %}
