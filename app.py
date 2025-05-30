@@ -1,8 +1,10 @@
 import os
 import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request,redirect, url_for
 import pyodbc
+import math
+
 
 load_dotenv()
 
@@ -365,10 +367,38 @@ def get_Ass_Id(AssId):
                            referees=referees_data)
 
 
-@app.route('/Inscritos')
-def getAtletas():
-    # Query for all athletes
-    athletes_query = '''
+def callUserPro(query, params=None):
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        
+        cursor.execute(query, params) 
+        
+        
+        cnxn.commit()  
+        cursor.close()
+        cnxn.close()
+        return "Sucess"
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+@app.route('/Inscritos', methods=['GET'])
+def inscritos_page():
+    return render_template('inscritos.html')  
+
+
+
+
+@app.route('/api/search_athletes', methods=['GET'])
+def search_athletes():
+    search = request.args.get('search', '').strip()
+    per_page = 15  
+
+    if len(search) < 2:
+        return jsonify([])  
+
+    query = '''
     SELECT 
         person.Id AS Person_Id,
         person.Name AS Athlete_Name
@@ -376,50 +406,90 @@ def getAtletas():
         FADU_ATLETA atle
     JOIN 
         FADU_PERSON person ON person.Id = atle.Person_Id
+    WHERE
+        person.Name LIKE ?
+    ORDER BY 
+        person.Id
     '''
+    athletes_cols, athletes_data = getInfo(query, [f'%{search}%'])
 
-    # Query for all coaches
-    coaches_query = '''
-    SELECT 
-        person.Id AS Person_Id,
-        person.Name AS Coach_Name
-    FROM 
-        FADU_TREINADOR coach
-    JOIN 
-        FADU_PERSON person ON person.Id = coach.Person_Id
-    '''
-
-    # Query for all referees
-    referees_query = '''
-    SELECT 
-        person.Id AS Person_Id,
-        person.Name AS Referee_Name
-    FROM 
-        FADU_ARBITRO arb
-    JOIN 
-        FADU_PERSON person ON person.Id = arb.Person_Id
-    '''
-
-    # Execute the queries and get the results
-    athletes_cols, athletes_data = getInfo(athletes_query)
-    coaches_cols, coaches_data = getInfo(coaches_query)
-    referees_cols, referees_data = getInfo(referees_query)
-
-    # Return the rendered template with all the necessary data
-    return render_template('inscritos.html',
-                           athletes_columns=athletes_cols,
-                           athletes=athletes_data,
-                           coaches_columns=coaches_cols,
-                           coaches=coaches_data,
-                           referees_columns=referees_cols,
-                           referees=referees_data)
+    results = [ [row[0], row[1]] for row in athletes_data]
+    response = [{'columns': athletes_cols, 'rows': results}]
+    return jsonify(response)
 
 
-@app.route('/api/Inscritos')
-def getInscritos():
-    query = '''select * from FADU_PERSON'''
-    info = getInfo(query)
-    return jsonify(info)
+
+@app.route('/api/associacoes', methods=['GET'])
+def api_get_associacoes():
+    associations_query = "SELECT Id, Name FROM FADU_ASSOCIAÇAO_ACADEMICA"
+    associations_cols, associations_data = getInfo(associations_query)
+    return jsonify({'columns': associations_cols, 'rows': associations_data})
+
+
+@app.route('/api/inscritos', methods=['POST','GET'])
+def api_add_athlete():
+    if(request.method == 'POST'):
+        nome = request.form.get('athleteName', '').strip()
+        numero_cc = request.form.get('athleteNumeroCC', '').strip()
+        date_birth = request.form.get('athleteDateBirth', '').strip()
+        email = request.form.get('athleteEmail', '').strip()
+        phone = request.form.get('athletePhone', '').strip()
+        ass_id = request.form.get('athleteAssId', '').strip()
+
+        callUserProcessure = '''
+        DECLARE @NewPersonId INT;
+        EXEC dbo.addAtlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
+        SELECT @NewPersonId;
+        '''
+        callUserPro(callUserProcessure, [nome, numero_cc, date_birth, email, phone, ass_id])
+        return jsonify({'status': 'success'})
+    else:
+        page = request.args.get('page', 1, type=int)
+        per_page = 15
+        offset = (page - 1) * per_page
+
+        athletes_query = '''
+        SELECT 
+            person.Id AS Person_Id,
+            person.Name AS Athlete_Name
+        FROM 
+            FADU_ATLETA atle
+        JOIN 
+            FADU_PERSON person ON person.Id = atle.Person_Id
+        ORDER BY 
+            person.Id
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
+        '''
+        athletes_cols, athletes_data = getInfo(athletes_query, [offset, per_page])
+
+        count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
+        total_athletes = getInfo(count_query)[1][0][0]
+        total_pages = math.ceil(total_athletes / per_page)
+
+        response = {
+            'columns': athletes_cols,
+            'rows': athletes_data,
+            'total_athletes': total_athletes,
+            'total_pages': total_pages,
+            'current_page': page
+        }
+        return jsonify(response)
+
+
+@app.route('/api/inscritos/<athlete>', methods=['DELETE'])
+def api_delete_athlete(athlete):
+    try:
+        athlete = int(athlete)
+        callUserProcedure = '''
+        EXEC dbo.deleteAtlete ? ;
+        '''
+        callUserPro(callUserProcedure, [athlete])
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        # Log the error (optional)
+        print(f"Error deleting athlete: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 if __name__ == '__main__':

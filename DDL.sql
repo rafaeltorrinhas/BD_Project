@@ -4,7 +4,8 @@ create table dbo.FADU_FASE (
 )
 go create table dbo.FADU_MODALIDADE (
         Id int identity primary key,
-        Name varchar(64) not null
+        Name varchar(64) not null,
+        NumeroMaxPlayers int not NULL
     )
 go create table dbo.FADU_ORGANIZACAO (
         Id int identity primary key,
@@ -41,7 +42,7 @@ go create table dbo.FADU_JOGO (
 go create table dbo.FADU_PERSON (
         Id int identity primary key,
         Name varchar(64),
-        NumeroCC char(9) not null check (
+        NumeroCC char(9) UNIQUE not null  check  (
             [NumeroCC] like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
         ),
         DateBirth date,
@@ -102,3 +103,4 @@ go
 
 
 
+-- could increse perfomance CREATE INDEX IDX_FADU_PERSONEQUIPA_MOD_ASS ON FADU_PERSONEQUIPA(Mod_Id, Ass_Id);

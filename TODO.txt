@@ -4,10 +4,13 @@ TODO:
         - NÃO REMOVER JOGADORES (NÃO SEI COMO SE IRIA FAZER COM OS JOGOS EM QUE ELES ESTÃO) por valor default -1
         - AO REMOVER UNIVERSIDADE/ASSOCIAÇÃO, REMOVER TUDO O QUE TIVER A UNIVERSIDADE/ASSOCIAÇÃO cascate 
         - AO REMOVER MODALIDADES DE UMA ASSOCIAÇÃO, REMOVER OS JOGOS TODOS DESSA MODALIDADE E DESSA ASSOCIAÇÃO cascate
-        - AO REMOVER/ADICIONAR MEDALHAS (NO VER DETALHES DAS ASSOCIAÇÕES) ATUALIZAR NO RESTO DOS SÍTIOS TRIGGERS
+        - AO REMOVER/ADICIONAR MEDALHAS (NO VER DETALHES DAS ASSOCIAÇÕES) ATUALIZAR NO RESTO DOS SÍTIOS TRIGGERS no person_idmed  #TA FEITO
+        - preciso ATUALIZAR person_id
         - AO EDITAR NOMES, EDITAR EM TODO O LADO nao sei se faz automatico
-        - colocar número maximo de JOGADORES por MODALIDADE euipa se for dauela modalidade nao pode ter asima dos jogadores maximos
+        - colocar número maximo de JOGADORES por MODALIDADE euipa se for dauela modalidade nao pode ter asima dos jogadores maximos # TA FEITO
         - adicioanr vitiorias na ass mod por TRIGGERS
+        - adcionar o show data to players 
+        - adcioanr a possibilidade de EDITAR 
 
     - FAZER FILTROS
     
