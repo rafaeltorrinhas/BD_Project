@@ -15,54 +15,212 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
 
-    <style>
-      /* Custom Modal Styles */
-      .modal-header {
-        background-color: #007bff;
-        color: white;
-        font-size: 1.25rem;
-      }
-
-      .modal-footer {
-        border-top: 1px solid #dee2e6;
-      }
-
-      .modal-body input {
-        border: 1px solid #ced4da;
-        padding: 10px;
-        width: 100%;
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
   <body>
-    <div class="container mt-4">
-      <div class="container mt-4">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <input
-              type="text"
-              id="searchInput"
-              class="form-control"
-              placeholder="Search athlete..."
-            />
+    <!-- Modern Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
+
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="">— Selecionar Vista —</option>
+            <option value="/Uni">🏛️ Universidades</option>
+            <option value="/Ass">🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases">📅 Fases</option>
+            <option value="/Inscritos" selected>👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+      <div class="main-container fade-in">
+        <!-- Page Header -->
+        <div class="page-header">
+          <h1 class="page-title">
+            <i class="fas fa-users"></i>
+            Atletas
+          </h1>
+          <div class="text-muted">
+            <i class="fas fa-info-circle"></i>
+            Gerir informações dos atletas inscritos
           </div>
         </div>
 
-        <!-- Table for Athletes -->
-        <h2>Athletes</h2>
-        <table class="table table-striped">
-          <tbody id="athletesTableBody"></tbody>
-        </table>
-        <!-- Pagination Controls -->
-        <nav aria-label="Page navigation">
+        <div class="filter-section" id="filterSection">
+          <div class="filter-header" onclick="toggleFilters()">
+            <h3 class="filter-title">
+              <i class="fas fa-filter"></i>
+              Filtros Avançados
+            </h3>
+            <button class="filter-toggle" id="filterToggle">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+
+          <div class="filter-content" id="filterContent">
+            <!-- Active Filters Display -->
+            <div
+              class="active-filters"
+              id="activeFilters"
+              style="display: none"
+            >
+              <strong><i class="fas fa-tags mr-2"></i>Filtros Ativos:</strong>
+              <div class="active-filter-tags" id="activeFilterTags"></div>
+            </div>
+
+            <!-- Filter Form -->
+            <form id="filterForm">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-calendar"></i>
+                    Número do CC
+                  </label>
+                  <input
+                    type="text"
+                    id="filterCCNumber"
+                    name="cc_number"
+                    class="filter-input"
+                    placeholder="Ex: 261234567"
+                    pattern="[0-9]{9}"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-calendar"></i>
+                    Número de Telefone
+                  </label>
+                  <input
+                    type="text"
+                    id="filterPhoneNumber"
+                    name="phone_number"
+                    class="filter-input"
+                    placeholder="Ex: 961234567"
+                    pattern="[0-9]{9}"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-calendar"></i>
+                    Idade
+                  </label>
+                  <input
+                    type="number"
+                    id="filterAge"
+                    name="age"
+                    class="filter-input"
+                    placeholder="Ex: 25"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-sort"></i>
+                    Ordenar Por
+                  </label>
+                  <select
+                    id="filterSortBy"
+                    name="sort_by"
+                    class="filter-select"
+                  >
+                    <option value="">Ordem Padrão</option>
+                    <option value="name_asc">Nome (A-Z)</option>
+                    <option value="name_desc">Nome (Z-A)</option>
+                    <option value="age_asc">Idade (Crescente)</option>
+                    <option value="age_desc">Idade (Decrescente)</option>
+                    <option value="birth_date_asc">
+                      Data Nascimento (Mais Antigo)
+                    </option>
+                    <option value="birth_date_desc">
+                      Data Nascimento (Mais Recente)
+                    </option>
+                    <option value="association_asc">Associação (A-Z)</option>
+                    <option value="association_desc">Associação (Z-A)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button
+                  type="button"
+                  class="btn-filter btn-clear-filter"
+                  onclick="clearFilters()"
+                >
+                  <i class="fas fa-times"></i>
+                  Limpar Filtros
+                </button>
+                <button type="submit" class="btn-filter btn-apply-filter">
+                  <i class="fas fa-search"></i>
+                  Aplicar Filtros
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- Controls Section -->
+        <div class="controls-section">
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-input"
+              placeholder="Pesquisar atleta por nome..."
+            />
+          </div>
+          <button id="openModalBtn" class="btn btn-add">
+            <i class="fas fa-plus"></i>
+            Adicionar Atleta
+          </button>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-hashtag mr-2"></i>ID</th>
+                  <th><i class="fas fa-user mr-2"></i>Nome</th>
+                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="athletesTableBody">
+                <!-- Athletes will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Navegação de páginas">
           <ul id="pagination" class="pagination justify-content-center"></ul>
         </nav>
       </div>
-      <!-- Add Info Button -->
-      <button id="openModalBtn" class="btn btn-primary">ADD INFO</button>
     </div>
 
-    <!-- Bootstrap Modal -->
+    <!-- Add Info Modal -->
     <div
       class="modal fade"
       id="addInfoModal"
@@ -75,11 +233,12 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="exampleModalLabel">
-              Enter Athlete Information
+              <i class="fas fa-user-plus mr-2"></i>
+              Adicionar Novo Atleta
             </h5>
             <button
               type="button"
-              class="close"
+              class="close text-white"
               data-dismiss="modal"
               aria-label="Close"
             >
@@ -89,7 +248,9 @@
           <div class="modal-body">
             <form onsubmit="return handleAddAthlete(event);">
               <div class="form-group">
-                <label for="athleteName">Name:</label>
+                <label for="athleteName">
+                  <i class="fas fa-user mr-1"></i>Nome:
+                </label>
                 <input
                   type="text"
                   id="athleteName"
@@ -99,7 +260,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="athleteNumeroCC">NumeroCC:</label>
+                <label for="athleteNumeroCC">
+                  <i class="fas fa-id-card mr-1"></i>Número CC:
+                </label>
                 <input
                   type="text"
                   id="athleteNumeroCC"
@@ -109,7 +272,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="athleteDateBirth">Date of Birth:</label>
+                <label for="athleteDateBirth">
+                  <i class="fas fa-calendar mr-1"></i>Data de Nascimento:
+                </label>
                 <input
                   type="date"
                   id="athleteDateBirth"
@@ -119,7 +284,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="athleteEmail">Email:</label>
+                <label for="athleteEmail">
+                  <i class="fas fa-envelope mr-1"></i>Email:
+                </label>
                 <input
                   type="email"
                   id="athleteEmail"
@@ -129,7 +296,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="athletePhone">Phone:</label>
+                <label for="athletePhone">
+                  <i class="fas fa-phone mr-1"></i>Telefone:
+                </label>
                 <input
                   type="text"
                   id="athletePhone"
@@ -139,24 +308,32 @@
                 />
               </div>
               <div class="form-group">
-                <label for="athleteAssId">Association:</label>
+                <label for="athleteAssId">
+                  <i class="fas fa-university mr-1"></i>Associação:
+                </label>
                 <select
                   id="athleteAssId"
                   name="athleteAssId"
                   class="form-control"
                   required
                 >
-                  <option value="">Select Association</option>
+                  <option value="">Selecionar Associação</option>
                 </select>
               </div>
-              <button type="submit" class="btn btn-success btn-block">
-                Submit
+              <button
+                type="submit"
+                class="btn btn-success btn-block"
+                style="border-radius: 8px; padding: 0.75rem; font-weight: 600"
+              >
+                <i class="fas fa-save mr-2"></i>Guardar Atleta
               </button>
             </form>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Athlete Details Modal -->
     <div
       class="modal fade"
       id="athleteDetailsModal"
@@ -167,9 +344,9 @@
     >
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-          <div class="modal-header bg-primary text-white">
+          <div class="modal-header">
             <h5 class="modal-title" id="athleteDetailsModalLabel">
-              Athlete Details
+              <i class="fas fa-info-circle mr-2"></i>Detalhes do Atleta
             </h5>
             <button
               type="button"
@@ -181,16 +358,16 @@
             </button>
           </div>
           <div class="modal-body" id="athleteDetailsBody">
-            <!-- Athlete info will be dynamically injected here -->
-            <p>Loading athlete details...</p>
+            <p>A carregar detalhes do atleta...</p>
           </div>
           <div class="modal-footer">
             <button
               type="button"
               class="btn btn-secondary"
               data-dismiss="modal"
+              style="border-radius: 8px"
             >
-              Close
+              Fechar
             </button>
           </div>
         </div>
@@ -208,9 +385,12 @@
     >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <div class="modal-header bg-warning text-white">
+          <div
+            class="modal-header"
+            style="background: linear-gradient(135deg, #f59e0b, #d97706)"
+          >
             <h5 class="modal-title" id="editModalLabel">
-              Edit Athlete Information
+              <i class="fas fa-edit mr-2"></i>Editar Informações do Atleta
             </h5>
             <button
               type="button"
@@ -225,7 +405,9 @@
             <form onsubmit="return handleEditAthlete(event);">
               <input type="hidden" id="editAthleteId" />
               <div class="form-group">
-                <label for="editAthleteName">Name:</label>
+                <label for="editAthleteName">
+                  <i class="fas fa-user mr-1"></i>Nome:
+                </label>
                 <input
                   type="text"
                   id="editAthleteName"
@@ -234,7 +416,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="editAthleteNumeroCC">NumeroCC:</label>
+                <label for="editAthleteNumeroCC">
+                  <i class="fas fa-id-card mr-1"></i>Número CC:
+                </label>
                 <input
                   type="text"
                   id="editAthleteNumeroCC"
@@ -243,7 +427,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="editAthleteDateBirth">Date of Birth:</label>
+                <label for="editAthleteDateBirth">
+                  <i class="fas fa-calendar mr-1"></i>Data de Nascimento:
+                </label>
                 <input
                   type="date"
                   id="editAthleteDateBirth"
@@ -252,7 +438,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="editAthleteEmail">Email:</label>
+                <label for="editAthleteEmail">
+                  <i class="fas fa-envelope mr-1"></i>Email:
+                </label>
                 <input
                   type="email"
                   id="editAthleteEmail"
@@ -261,7 +449,9 @@
                 />
               </div>
               <div class="form-group">
-                <label for="editAthletePhone">Phone:</label>
+                <label for="editAthletePhone">
+                  <i class="fas fa-phone mr-1"></i>Telefone:
+                </label>
                 <input
                   type="text"
                   id="editAthletePhone"
@@ -270,13 +460,19 @@
                 />
               </div>
               <div class="form-group">
-                <label for="editAthleteAssId">Association:</label>
+                <label for="editAthleteAssId">
+                  <i class="fas fa-university mr-1"></i>Associação:
+                </label>
                 <select id="editAthleteAssId" class="form-control" required>
-                  <option value="">Select Association</option>
+                  <option value="">Selecionar Associação</option>
                 </select>
               </div>
-              <button type="submit" class="btn btn-warning btn-block">
-                Save Changes
+              <button
+                type="submit"
+                class="btn btn-warning btn-block"
+                style="border-radius: 8px; padding: 0.75rem; font-weight: 600"
+              >
+                <i class="fas fa-save mr-2"></i>Guardar Alterações
               </button>
             </form>
           </div>

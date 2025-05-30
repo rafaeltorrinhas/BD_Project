@@ -1,5 +1,147 @@
+document
+  .getElementById("filterForm")
+  .addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const ccNumber = document.getElementById("filterCCNumber").value.trim();
+    const phoneNumber = document
+      .getElementById("filterPhoneNumber")
+      .value.trim();
+    const age = document.getElementById("filterAge").value.trim();
+    const sortBy = document.getElementById("filterSortBy").value.trim();
+
+    const params = new URLSearchParams();
+    if (ccNumber !== "") {
+      params.append("cc_number", ccNumber);
+    }
+    if (phoneNumber !== "") {
+      params.append("phone_number", phoneNumber);
+    }
+    if (age !== "") {
+      params.append("age", age);
+    }
+    if (sortBy !== "") {
+      params.append("sort_by", sortBy);
+    }
+
+    fetch(`/api/inscritos?${params.toString()}`)
+      .then((response) => response.json())
+      .then((data) => {
+        renderAthletesTable(data.rows);
+        renderPagination(data.total_pages, data.current_page);
+      })
+      .catch((error) => console.error("Error applying filters:", error));
+  });
+
+function toggleFilters() {
+  const content = document.getElementById("filterContent");
+  const toggle = document.getElementById("filterToggle");
+
+  content.classList.toggle("active");
+  toggle.classList.toggle("active");
+}
+
+function clearFilters() {
+  // Clear all form inputs
+  document.getElementById("filterForm").reset();
+
+  // Hide active filters
+  document.getElementById("activeFilters").style.display = "none";
+
+  // Clear active filter tags
+  document.getElementById("activeFilterTags").innerHTML = "";
+
+  console.log("Filters cleared");
+}
+
+function removeFilter(filterType) {
+  // Remove specific filter
+  console.log("Removing filter:", filterType);
+
+  // Find and remove the filter tag
+  const filterTags = document.querySelectorAll(".filter-tag");
+  filterTags.forEach((tag) => {
+    if (tag.textContent.toLowerCase().includes(filterType)) {
+      tag.remove();
+    }
+  });
+
+  // Hide active filters section if no tags remain
+  const remainingTags = document.querySelectorAll(".filter-tag");
+  if (remainingTags.length === 0) {
+    document.getElementById("activeFilters").style.display = "none";
+  }
+}
+
+// Form submission handler
+document.getElementById("filterForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  // Show active filters section
+  document.getElementById("activeFilters").style.display = "block";
+
+  // Get form data and create filter tags
+  const formData = new FormData(this);
+  const activeFiltersContainer = document.getElementById("activeFilterTags");
+
+  // Clear existing tags
+  activeFiltersContainer.innerHTML = "";
+
+  // Add new filter tags based on form data
+  for (let [key, value] of formData.entries()) {
+    if (value && value.trim() !== "") {
+      const tag = document.createElement("div");
+      tag.className = "filter-tag";
+
+      let displayText = "";
+      switch (key) {
+        case "association":
+          displayText = `Associação: ${
+            document.querySelector(
+              `#filterAssociation option[value="${value}"]`
+            ).textContent
+          }`;
+          break;
+        case "min_age":
+          displayText = `Idade Mín: ${value}`;
+          break;
+        case "max_age":
+          displayText = `Idade Máx: ${value}`;
+          break;
+        case "sort_by":
+          displayText = `Ordem: ${
+            document.querySelector(`#filterSortBy option[value="${value}"]`)
+              .textContent
+          }`;
+          break;
+        default:
+          displayText = `${key}: ${value}`;
+      }
+
+      tag.innerHTML = `
+                        <span>${displayText}</span>
+                        <button onclick="removeFilter('${key}')" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+
+      activeFiltersContainer.appendChild(tag);
+    }
+  }
+
+  console.log("Filters applied:", Object.fromEntries(formData));
+});
+
+function navigateToPage(pageUrl) {
+  if (pageUrl) {
+    window.location.href = pageUrl;
+  }
+}
+
 $("#openModalBtn").click(function () {
-  $("#addInfoModal").modal("show");
+  loadAssociations("athleteAssId").then(() => {
+    $("#addInfoModal").modal("show");
+  });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -98,7 +240,7 @@ function renderAthletesTable(athletes) {
             <a href="#" class="edit-athlete" data-id="${athlete[0]}" title="Edit">
                 <i class="fas fa-edit"></i>
             </a>
-            <a href="#" id="delete-athlete" data-id="${athlete[0]}" title="Delete">
+            <a href="#" class="delete-athlete" data-id="${athlete[0]}" title="Delete">
                 <i class="fas fa-trash-alt"></i>
             </a>
             <a href="#" class="view-athlete" data-id="${athlete[0]}" title="View Info">
@@ -190,7 +332,37 @@ document.addEventListener("click", function (e) {
     const athleteId = e.target.closest(".edit-athlete").getAttribute("data-id");
     openEditModal(athleteId);
   }
+
+  if (e.target.closest(".delete-athlete")) {
+    e.preventDefault();
+    const athleteId = e.target
+      .closest(".delete-athlete")
+      .getAttribute("data-id");
+    if (confirm("Are you sure you want to delete this athlete?")) {
+      deleteAthlete(athleteId);
+    }
+  }
 });
+
+function deleteAthlete(athleteId) {
+  fetch(`/api/inscritos/${athleteId}`, {
+    method: "DELETE",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        alert("Athlete deleted successfully!");
+        loadAthletes(1);
+      } else {
+        console.error("Error deleting athlete:", data.message);
+        alert("Error deleting athlete: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error deleting athlete:", error);
+      alert("Error deleting athlete: " + error);
+    });
+}
 
 function openEditModal(athleteId) {
   fetch(`/api/athlete/${athleteId}`)

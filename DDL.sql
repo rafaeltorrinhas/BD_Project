@@ -5,7 +5,7 @@ create table dbo.FADU_FASE (
 go create table dbo.FADU_MODALIDADE (
         Id int identity primary key,
         Name varchar(64) not null,
-        NumeroMaxPlayers int not NULL
+        MaxPlayers int not NULL
     )
 go create table dbo.FADU_ORGANIZACAO (
         Id int identity primary key,

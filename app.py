@@ -107,15 +107,15 @@ def get_uni():
 
     cols, serialized = getInfo(
         '''
-            SELECT 
+            SELECT
             uni.Name AS Nome,
             uni.Address AS Endereço,
             ass.Id as IdAssociação,
             ass.Name AS NomeAssociação,
             ass.Sigla AS SiglaAssociação
-            FROM 
+            FROM
             FADU_UNIVERSIDADE uni
-            JOIN 
+            JOIN
             FADU_ASSOCIAÇAO_ACADEMICA ass
             ON uni.Ass_Id = ass.Id
             '''
@@ -129,7 +129,7 @@ def get_ass():
 
     cols, serialized, =    getInfo(
         '''
-            SELECT 
+            SELECT
                 ass.Id AS Id,
                 ass.Name AS Nome,
                 ass.Sigla AS Sigla,
@@ -138,19 +138,19 @@ def get_ass():
                 SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
                 SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
 
-            FROM 
+            FROM
                 FADU_ASSOCIAÇAO_ACADEMICA ass
-            LEFT JOIN 
+            LEFT JOIN
                 FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
-            LEFT JOIN 
+            LEFT JOIN
                 FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
-            LEFT JOIN 
+            LEFT JOIN
                 FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
-            LEFT JOIN 
+            LEFT JOIN
                 FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
-            GROUP BY 
+            GROUP BY
                 ass.Id, ass.Name, ass.Sigla
-            ORDER BY 
+            ORDER BY
                 ass.Id
             '''
     )
@@ -162,23 +162,23 @@ def get_ass():
 def get_Jogos():
     cols, serialized = getInfo(
         '''
-        SELECT 
-            jogo.Id AS ID, 
-            accCasa.Name AS Casa, 
-            jogo.Resultado AS Resultado, 
+        SELECT
+            jogo.Id AS ID,
+            accCasa.Name AS Casa,
+            jogo.Resultado AS Resultado,
             accOponente.Name AS Fora,
             mod.Name AS Modalidade  -- Add Modality Name
-        FROM 
+        FROM
             FADU_JOGO jogo
-        LEFT JOIN 
+        LEFT JOIN
             FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
-        LEFT JOIN 
+        LEFT JOIN
             FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
-        LEFT JOIN 
+        LEFT JOIN
             FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
-        LEFT JOIN 
+        LEFT JOIN
             FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
-        LEFT JOIN 
+        LEFT JOIN
             FADU_MODALIDADE mod ON mod.Id = jogo.Mod_Id
         '''
     )
@@ -189,11 +189,11 @@ def get_Jogos():
 def get_Jogo_Id(GameId):
     # Query to get the game details
     query = f'''
-    SELECT 
-         jogo.Id AS Id, 
+    SELECT
+         jogo.Id AS Id,
          accCasa.[Name] AS Casa,
-         jogo.Resultado AS Resultado, 
-         accOponente.[Name] AS Oponente, 
+         jogo.Resultado AS Resultado,
+         accOponente.[Name] AS Oponente,
          jogo.Duracao AS Tempo,
          Jogo.LocalJogo AS Local,
          mod.[Name] AS Modalidade
@@ -209,14 +209,14 @@ def get_Jogo_Id(GameId):
 
     # Query to get the team player details
     queryTeams = f'''
-        SELECT 
-            T.TeamType, 
-            T.TeamId, 
+        SELECT
+            T.TeamType,
+            T.TeamId,
             person.[Name] AS PlayerName,
             person.Id AS PlayerId
         FROM FADU_JOGO jogo
-        CROSS APPLY (VALUES 
-            ('Host', jogo.Equipa_id1), 
+        CROSS APPLY (VALUES
+            ('Host', jogo.Equipa_id1),
             ('Opponent', jogo.Equipa_id2)
         ) AS T(TeamType, TeamId)
         JOIN FADU_PERSONEQUIPA personTeam ON personTeam.EQUIPA_Id = T.TeamId
@@ -253,11 +253,11 @@ def get_Fases_Id(FaseId):
     query = f'''
     select fase.Id as Id ,
     fase.[Name] as FaseName,
-    ass.[Name] AS AssociacaoOrg, 
-    jogo.Id AS GameID, 
+    ass.[Name] AS AssociacaoOrg,
+    jogo.Id AS GameID,
     jogo.Equipa_id1 AS Casa,
-    jogo.Resultado AS Resultado, 
-    jogo.Equipa_id2 AS Fora 
+    jogo.Resultado AS Resultado,
+    jogo.Equipa_id2 AS Fora
     from FADU_FASE fase
     join FADU_ORGANIZACAO org on org.Fase_Id = fase.id
     join FADU_ASSOCIAÇAO_ACADEMICA ass ON ass.Org_Id=org.Id
@@ -275,30 +275,30 @@ def get_Fases_Id(FaseId):
 def get_Ass_Id(AssId):
     # Query to retrieve association details
     query = f'''
-    SELECT 
+    SELECT
         ass.Id AS Id,
         ass.Name AS Nome,
         ass.Sigla AS Sigla,
         STRING_AGG(mod.Name, ', ') AS Modalidades
-    FROM 
+    FROM
         FADU_ASSOCIAÇAO_ACADEMICA ass
-    LEFT JOIN 
+    LEFT JOIN
         FADU_ASSMODALIDADE am ON ass.Id = am.Ass_Id
-    LEFT JOIN 
+    LEFT JOIN
         FADU_MODALIDADE mod ON am.Mod_Id = mod.Id
     WHERE ass.Id = ?
-    GROUP BY 
+    GROUP BY
         ass.Id, ass.Name, ass.Sigla;
     '''
 
     # Query for medals
     medals_query = f'''
-    SELECT 
+    SELECT
         tm.Type AS Tipo,
         med.Year AS Ano
-    FROM 
+    FROM
         FADU_MEDALHAS med
-    LEFT JOIN 
+    LEFT JOIN
         FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
     WHERE med.Ass_Id = ?
     ORDER BY med.Year, tm.Type;
@@ -306,32 +306,32 @@ def get_Ass_Id(AssId):
 
     # Queries for athletes, coaches, and referees
     athletes_query = f'''
-    SELECT 
+    SELECT
         person.Id AS Person_Id,
         person.Name AS Athlete_Name
-    FROM 
+    FROM
         FADU_ATLETA atle
-    JOIN 
+    JOIN
         FADU_PERSON person ON person.Id = atle.Person_Id
     WHERE person.Ass_Id = ?
     '''
     coaches_query = f'''
-    SELECT 
+    SELECT
         person.Id AS Person_Id,
         person.Name AS Coach_Name
-    FROM 
+    FROM
         FADU_TREINADOR coach
-    JOIN 
+    JOIN
         FADU_PERSON person ON person.Id = coach.Person_Id
     WHERE person.Ass_Id = ?
     '''
     referees_query = f'''
-    SELECT 
+    SELECT
         person.Id AS Person_Id,
         person.Name AS Referee_Name
-    FROM 
+    FROM
         FADU_ARBITRO arb
-    JOIN 
+    JOIN
         FADU_PERSON person ON person.Id = arb.Person_Id
     WHERE person.Ass_Id = ?
     '''
@@ -397,16 +397,16 @@ def search_athletes():
         return jsonify([])
 
     query = '''
-    SELECT 
+    SELECT
         person.Id AS Person_Id,
         person.Name AS Athlete_Name
-    FROM 
+    FROM
         FADU_ATLETA atle
-    JOIN 
+    JOIN
         FADU_PERSON person ON person.Id = atle.Person_Id
     WHERE
         person.Name LIKE ?
-    ORDER BY 
+    ORDER BY
         person.Id
     '''
     athletes_cols, athletes_data = getInfo(query, [f'%{search}%'])
@@ -423,58 +423,58 @@ def api_get_associacoes():
     return jsonify({'columns': associations_cols, 'rows': associations_data})
 
 
-@app.route('/api/inscritos', methods=['POST', 'GET'])
-def api_add_athlete():
-    if (request.method == 'POST'):
-        nome = request.form.get('athleteName', '').strip()
-        numero_cc = request.form.get('athleteNumeroCC', '').strip()
-        date_birth = request.form.get('athleteDateBirth', '').strip()
-        email = request.form.get('athleteEmail', '').strip()
-        phone = request.form.get('athletePhone', '').strip()
-        ass_id = request.form.get('athleteAssId', '').strip()
+# @app.route('/api/inscritos', methods=['POST', 'GET'])
+# def api_add_athlete():
+#     if (request.method == 'POST'):
+#         nome = request.form.get('athleteName', '').strip()
+#         numero_cc = request.form.get('athleteNumeroCC', '').strip()
+#         date_birth = request.form.get('athleteDateBirth', '').strip()
+#         email = request.form.get('athleteEmail', '').strip()
+#         phone = request.form.get('athletePhone', '').strip()
+#         ass_id = request.form.get('athleteAssId', '').strip()
 
-        callUserProcessure = '''
-        DECLARE @NewPersonId INT;
-        EXEC dbo.addAtlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
-        SELECT @NewPersonId;
-        '''
-        callUserPro(callUserProcessure, [
-                    nome, numero_cc, date_birth, email, phone, ass_id])
-        return jsonify({'status': 'success'})
-    else:
-        page = request.args.get('page', 1, type=int)
-        per_page = 15
-        offset = (page - 1) * per_page
+#         callUserProcessure = '''
+#         DECLARE @NewPersonId INT;
+#         EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
+#         SELECT @NewPersonId;
+#         '''
+#         callUserPro(callUserProcessure, [
+#                     nome, numero_cc, date_birth, email, phone, ass_id])
+#         return jsonify({'status': 'success'})
+#     else:
+#         page = request.args.get('page', 1, type=int)
+#         per_page = 15
+#         offset = (page - 1) * per_page
 
-        athletes_query = '''
-        SELECT 
-            person.Id AS Person_Id,
-            person.Name AS Athlete_Name
-        FROM 
-            FADU_ATLETA atle
-        JOIN 
-            FADU_PERSON person ON person.Id = atle.Person_Id
-        ORDER BY 
-            person.Id
-        OFFSET ? ROWS
-        FETCH NEXT ? ROWS ONLY;
-        '''
-        athletes_cols, athletes_data = getInfo(
-            athletes_query, [offset, per_page])
+#         athletes_query = '''
+#         SELECT
+#             person.Id AS Person_Id,
+#             person.Name AS Athlete_Name
+#         FROM
+#             FADU_ATLETA atle
+#         JOIN
+#             FADU_PERSON person ON person.Id = atle.Person_Id
+#         ORDER BY
+#             person.Id
+#         OFFSET ? ROWS
+#         FETCH NEXT ? ROWS ONLY;
+#         '''
+#         athletes_cols, athletes_data = getInfo(
+#             athletes_query, [offset, per_page])
 
-        count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
-        total_athletes = getInfo(count_query)[1][0][0]
-        total_pages = math.ceil(total_athletes / per_page)
+#         count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
+#         total_athletes = getInfo(count_query)[1][0][0]
+#         total_pages = math.ceil(total_athletes / per_page)
 
-        response = {
-            'columns': athletes_cols,
-            'rows': athletes_data,
-            'total_athletes': total_athletes,
-            'total_pages': total_pages,
-            'current_page': page
-        }
-        print(response)
-        return jsonify(response)
+#         response = {
+#             'columns': athletes_cols,
+#             'rows': athletes_data,
+#             'total_athletes': total_athletes,
+#             'total_pages': total_pages,
+#             'current_page': page
+#         }
+#         print(response)
+#         return jsonify(response)
 
 
 @app.route('/api/inscritos/<athlete>', methods=['DELETE'])
@@ -482,12 +482,11 @@ def api_delete_athlete(athlete):
     try:
         athlete = int(athlete)
         callUserProcedure = '''
-        EXEC dbo.deleteAtlete ? ;
+            EXEC dbo.deleteAthlete ? ;
         '''
         callUserPro(callUserProcedure, [athlete])
         return jsonify({'status': 'success'}), 200
     except Exception as e:
-        # Log the error (optional)
         print(f"Error deleting athlete: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -505,36 +504,18 @@ def update_athlete(athlete_id):
         cnxn = get_connection()
         cursor = cnxn.cursor()
 
-        # Start the transaction
-        cursor.execute("BEGIN TRANSACTION;")
-
-        # Validate NumeroCC uniqueness (optional)
+        # Call the stored procedure
         cursor.execute("""
-            SELECT COUNT(*) 
-            FROM dbo.FADU_PERSON
-            WHERE NumeroCC = ? AND Id <> ?
-        """, (numero_cc, athlete_id))
-        duplicate_count = cursor.fetchone()[0]
-        if duplicate_count > 0:
-            cursor.execute("ROLLBACK TRANSACTION;")
-            return jsonify({'status': 'error', 'message': 'Duplicate NumeroCC detected.'}), 400
+            EXEC dbo.UpdateAthlete
+                @Id = ?,
+                @Name = ?,
+                @NumeroCC = ?,
+                @DateBirth = ?,
+                @Email = ?,
+                @Phone = ?,
+                @Ass_Id = ?
+        """, (athlete_id, nome, numero_cc, date_birth, email, phone, ass_id))
 
-        # Update the athlete details
-        update_query = """
-            UPDATE dbo.FADU_PERSON
-            SET Name = ?, 
-                NumeroCC = ?, 
-                DateBirth = ?, 
-                Email = ?, 
-                Phone = ?, 
-                Ass_Id = ?
-            WHERE Id = ?
-        """
-        cursor.execute(update_query, (nome, numero_cc,
-                       date_birth, email, phone, ass_id, athlete_id))
-
-        # Commit the transaction
-        cursor.execute("COMMIT TRANSACTION;")
         cnxn.commit()
 
         cursor.close()
@@ -544,17 +525,13 @@ def update_athlete(athlete_id):
 
     except Exception as e:
         print(f"Error updating athlete: {e}")
-        try:
-            cursor.execute("ROLLBACK TRANSACTION;")
-        except:
-            pass
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 @app.route('/api/athlete/<int:athlete_id>', methods=['GET'])
 def get_athlete_details(athlete_id):
     query = """
-    SELECT 
+    SELECT
         P.Id,
         P.Name,
         P.NumeroCC,
@@ -584,6 +561,125 @@ def get_athlete_details(athlete_id):
         return jsonify(status='success', athlete=athlete)
     else:
         return jsonify(status='error', message='Athlete not found'), 404
+
+
+@app.route('/api/inscritos', methods=['POST', 'GET'])
+def api_add_athlete():
+    if request.method == 'POST':
+        nome = request.form.get('athleteName', '').strip()
+        numero_cc = request.form.get('athleteNumeroCC', '').strip()
+        date_birth = request.form.get('athleteDateBirth', '').strip()
+        email = request.form.get('athleteEmail', '').strip()
+        phone = request.form.get('athletePhone', '').strip()
+        ass_id = request.form.get('athleteAssId', '').strip()
+
+        callUserProcessure = '''
+        DECLARE @NewPersonId INT;
+        EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
+        SELECT @NewPersonId;
+        '''
+        callUserPro(callUserProcessure, [
+                    nome, numero_cc, date_birth, email, phone, ass_id])
+        return jsonify({'status': 'success'})
+    else:
+        page = request.args.get('page', 1, type=int)
+        per_page = 15
+        offset = (page - 1) * per_page
+
+        filters = []
+        params = []
+
+        # Filter: CC Number
+        cc_number = request.args.get('cc_number', '').strip()
+        if cc_number:
+            filters.append("person.NumeroCC LIKE ?")
+            params.append(f"%{cc_number}%")
+
+        # Filter: Phone Number
+        phone_number = request.args.get('phone_number', '').strip()
+        if phone_number:
+            filters.append("person.Phone LIKE ?")
+            params.append(f"%{phone_number}%")
+
+        # Filter: Age
+        age = request.args.get('age', '').strip()
+        if age:
+            try:
+                age_int = int(age)
+                current_year = datetime.datetime.now().year
+                birth_year = current_year - age_int
+                filters.append("YEAR(person.DateBirth) = ?")
+                params.append(birth_year)
+            except ValueError:
+                pass  # Skip invalid ages
+
+        # Sorting
+        sort_by = request.args.get('sort_by', '').strip()
+        sort_clause = "ORDER BY person.Id"
+        if sort_by:
+            sort_map = {
+                "name_asc": "person.Name ASC",
+                "name_desc": "person.Name DESC",
+                "age_asc": "person.DateBirth DESC",  # younger first
+                "age_desc": "person.DateBirth ASC",  # older first
+                "birth_date_asc": "person.DateBirth ASC",
+                "birth_date_desc": "person.DateBirth DESC",
+                "association_asc": "ass.Name ASC",
+                "association_desc": "ass.Name DESC"
+            }
+            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'person.Id')}"
+
+        # Base query
+        query = '''
+        SELECT 
+            person.Id AS Person_Id,
+            person.Name AS Athlete_Name,
+            ass.Name AS Association_Name
+        FROM 
+            FADU_ATLETA atle
+        JOIN 
+            FADU_PERSON person ON person.Id = atle.Person_Id
+        JOIN
+            FADU_ASSOCIAÇAO_ACADEMICA ass ON person.Ass_Id = ass.Id
+        '''
+
+        if filters:
+            query += " WHERE " + " AND ".join(filters)
+
+        query += f'''
+        {sort_clause}
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
+        '''
+        params_with_paging = params + [offset, per_page]
+
+        athletes_cols, athletes_data = getInfo(query, params_with_paging)
+
+        # Count query for pagination
+        count_query = '''
+        SELECT COUNT(*) 
+        FROM 
+            FADU_ATLETA atle
+        JOIN 
+            FADU_PERSON person ON person.Id = atle.Person_Id
+        JOIN
+            FADU_ASSOCIAÇAO_ACADEMICA ass ON person.Ass_Id = ass.Id
+        '''
+        if filters:
+            count_query += " WHERE " + " AND ".join(filters)
+
+        count_cols, count_data = getInfo(count_query, params)
+        total_athletes = count_data[0][0] if count_data else 0
+        total_pages = math.ceil(total_athletes / per_page)
+
+        response = {
+            'columns': athletes_cols,
+            'rows': athletes_data,
+            'total_athletes': total_athletes,
+            'total_pages': total_pages,
+            'current_page': page
+        }
+        return jsonify(response)
 
 
 if __name__ == '__main__':

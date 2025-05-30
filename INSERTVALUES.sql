@@ -12,28 +12,35 @@ DELETE FROM FADU_EQUIPA;
 DELETE FROM FADU_ASSMODALIDADE;
 DELETE FROM FADU_PERSON;
 DELETE FROM FADU_UNIVERSIDADE;
-DELETE FROM FADU_ASSOCIA�AO_ACADEMICA;
+DELETE FROM FADU_ASSOCIAÇAO_ACADEMICA;
 DELETE FROM FADU_ORGANIZACAO;
 DELETE FROM FADU_FASE;
 DELETE FROM FADU_MODALIDADE;
 DELETE FROM FADU_TIPOMEDALHA;
 
+-- to reset the ids to start at 1
+DBCC CHECKIDENT ('FADU_FASE', RESEED, 0);
+DBCC CHECKIDENT ('FADU_MODALIDADE', RESEED, 0);
+DBCC CHECKIDENT ('FADU_TIPOMEDALHA', RESEED, 0);
+DBCC CHECKIDENT ('FADU_ORGANIZACAO', RESEED, 0);
+DBCC CHECKIDENT ('FADU_ASSOCIAÇAO_ACADEMICA', RESEED, 0);
+DBCC CHECKIDENT ('FADU_PERSON', RESEED, 0);
+DBCC CHECKIDENT ('FADU_EQUIPA', RESEED, 0);
+
+
 -- Now insert data in proper dependency order
 
 -- 1. FASE (no dependencies)
-INSERT INTO FADU_FASE ([Name]) VALUES 
-('Fase de Grupos'), ('Oitavos-de-Final'), ('Quartos-de-Final'), 
-('Meias-Finais'), ('Final Nacional'), ('Super Ta�a'),
-('Playoff de Promo��o'), ('Torneio de Abertura'), 
-('Ta�a das Universidades'), ('Campeonato Regional Norte'),
-('Campeonato Regional Sul'), ('Torneio Internacional');
+INSERT INTO FADU_FASE ([Name]) VALUES
+('Fase de Grupos'), ('Fase Final');
 
 -- 2. ORGANIZA��O (depends on FASE)
-INSERT INTO FADU_ORGANIZACAO (Fase_id) VALUES 
-(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12);
+INSERT INTO FADU_ORGANIZACAO (Fase_id)
+SELECT Id FROM FADU_FASE;
+
 
 -- 3. MODALIDADE (no dependencies)
-INSERT INTO FADU_MODALIDADE ([Name], [MaxPlayers]) VALUES 
+INSERT INTO FADU_MODALIDADE ([Name], [MaxPlayers]) VALUES
 ('Futebol', 11),
 ('Futebol Feminino', 11),
 ('Futsal', 5),
@@ -59,42 +66,42 @@ INSERT INTO FADU_MODALIDADE ([Name], [MaxPlayers]) VALUES
 
 
 -- 4. TIPO DE MEDALHAS (no dependencies)
-INSERT INTO FADU_TIPOMEDALHA ([Type]) VALUES 
-('Ouro'), ('Prata'), ('Bronze'), ('M�rito'), 
-('Honra'), ('Excel�ncia'), ('Participa��o'), ('Fair Play');
+INSERT INTO FADU_TIPOMEDALHA ([Type]) VALUES
+('Ouro'), ('Prata'), ('Bronze'), ('Mérito'),
+('Honra'), ('Excelência'), ('Participação'), ('Fair Play');
 
 -- 5. ASSOCIA��ES ACAD�MICAS (depends on ORGANIZA��O)
-INSERT INTO FADU_ASSOCIA�AO_ACADEMICA ([Name], [Sigla], Org_Id) VALUES 
-('Associa��o Acad�mica do Norte Virtual', 'AANV', 1),
-('Associa��o Estudantil T�cnica Avan�ada', 'AETA', 2),
-('N�cleo Universit�rio Digital do Sul', 'NUDS', 3),
-('Federa��o Acad�mica Virtual Atl�ntica', 'FAVA', 4),
-('Liga Acad�mica do Centro', 'LAC', 5),
-('Uni�o de Estudantes Insulares', 'UEI', 6),
-('Associa��o Polit�cnica Digital', 'APD', 7),
-('Conselho Universit�rio Litoral', 'CUL', 8),
-('Alian�a de Escolas T�cnicas', 'AET', 9),
-('Federa��o de Estudantes do Interior', 'FEI', 10),
-('Associa��o de Medicina e Sa�de', 'AMS', 11),
-('Liga das Engenharias', 'LE', 12);
+INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA ([Name], [Sigla], Org_Id) VALUES
+('Associação Académica do Norte Virtual', 'AANV', 1),
+('Associação Estudantil Técnica Avançada', 'AETA', 1),
+('Núcleo Universitário Digital do Sul', 'NUDS', 1),
+('Federação Académica Virtual Atlântica', 'FAVA', 1),
+('Liga Académica do Centro', 'LAC', 1),
+('União de Estudantes Insulares', 'UEI', 1),
+('Associação Politécnica Digital', 'APD', 2),
+('Conselho Universitário Litoral', 'CUL', 2),
+('Aliança de Escolas Técnicas', 'AET', 2),
+('Federação de Estudantes do Interior', 'FEI', 2),
+('Associação de Medicina e Saúde', 'AMS', 2),
+('Liga das Engenharias', 'LE', 2 );
 
 -- 6. UNIVERSIDADES (depends on ASSOCIA��ES)
-INSERT INTO FADU_UNIVERSIDADE ([Address], [Name], [Ass_Id]) VALUES 
-('Rua do Saber 21', 'Universidade L�cida', 1),
+INSERT INTO FADU_UNIVERSIDADE ([Address], [Name], [Ass_Id]) VALUES
+('Rua do Saber 21', 'Universidade Lúcida', 1),
 ('Avenida do Conhecimento 42', 'Instituto Omega', 2),
-('Pra�a Acad�mica 88', 'Escola Superior Nova Era', 3),
-('Largo das Ci�ncias 99', 'Universidade Mar�tima Digital', 4),
+('Praça Académica 88', 'Escola Superior Nova Era', 3),
+('Largo das Ciências 99', 'Universidade Marítima Digital', 4),
 ('Alameda das Artes 15', 'Universidade Criativa', 5),
-('Travessa da Inova��o 77', 'Instituto Polit�cnico Global', 6),
-('Rotunda Cient�fica 33', 'Universidade de Ci�ncias Aplicadas', 7),
-('Boulevard Tecnol�gico 12', 'Faculdade de Engenharia Avan�ada', 8),
-('Avenida M�dica 56', 'Escola Superior de Sa�de', 9),
-('Passeio das Letras 24', 'Universidade Human�stica', 10),
-('Largo das Descobertas 19', 'Academia de Investiga��o', 11),
-('Pra�a do Conhecimento 68', 'Universidade Internacional', 12);
+('Travessa da Inovação 77', 'Instituto Politécnico Global', 6),
+('Rotunda Científica 33', 'Universidade de Ciências Aplicadas', 7),
+('Boulevard Tecnológico 12', 'Faculdade de Engenharia Avançada', 8),
+('Avenida Médica 56', 'Escola Superior de Saúde', 9),
+('Passeio das Letras 24', 'Universidade Humanística', 10),
+('Largo das Descobertas 19', 'Academia de Investigação', 11),
+('Praça do Conhecimento 68', 'Universidade Internacional', 12);
 
 -- 7. PESSOAS (depends on ASSOCIA��ES)
-INSERT INTO FADU_PERSON ([Name], [NumeroCC], [DateBirth], Email, Phone, Ass_Id) VALUES 
+INSERT INTO FADU_PERSON ([Name], [NumeroCC], [DateBirth], Email, Phone, Ass_Id) VALUES
 ('Ana Ribeiro', '123456789', '2001-05-21', 'ana.ribeiro@lucida.edu', '912345678', 1),
 ('Carlos Mendes', '987654321', '2000-03-15', 'carlos.mendes@omega.pt', '934567891', 2),
 ('Helena Silva', '456123789', '1999-07-10', 'helena.silva@nuds.edu', '926789345', 3),
@@ -105,19 +112,19 @@ INSERT INTO FADU_PERSON ([Name], [NumeroCC], [DateBirth], Email, Phone, Ass_Id) 
 ('Tiago Nunes', '445566778', '1999-04-18', 'tiago.nunes@nuds.edu', '919445566', 3),
 ('Beatriz Gomes', '556677889', '2002-09-11', 'beatriz.gomes@fava.org', '920556677', 4),
 ('Pedro Machado', '667788990', '1998-06-30', 'pedro.machado@novaera.edu', '921667788', 3),
-('In�s Ferreira', '778899001', '2001-02-14', 'ines.ferreira@lucida.edu', '922778899', 1),
+('Inês Ferreira', '778899001', '2001-02-14', 'ines.ferreira@lucida.edu', '922778899', 1),
 ('Miguel Santos', '889900112', '2000-10-27', 'miguel.santos@omega.pt', '923889900', 2),
 ('Catarina Lima', '990011223', '1999-03-08', 'catarina.lima@nuds.edu', '924990011', 3),
-('Andr� Marques', '001122334', '2002-07-22', 'andre.marques@fava.org', '925001122', 4),
-('Diana Sousa', '112233445', '1998-11-15', 'diana.sousa@novaera.edu', '926112233', 3),
-('Jo�o Pinto', '223344556', '2001-01-28', 'joao.pinto@lucida.edu', '927223344', 1),
-('Leonor Teixeira', '334455667', '2000-05-09', 'leonor.teixeira@omega.pt', '928334455', 2),
-('Francisco Rocha', '445566778', '1999-09-02', 'francisco.rocha@nuds.edu', '929445566', 3),
-('Matilde Coelho', '556677889', '2002-04-17', 'matilde.coelho@fava.org', '930556677', 4),
-('Gon�alo Neves', '667788990', '1998-08-20', 'goncalo.neves@novaera.edu', '931667788', 3);
+('André Marques', '001122334', '2002-07-22', 'andre.marques@fava.org', '925001122', 4),
+('Diana Sousa', '112233446', '1998-11-15', 'diana.sousa@novaera.edu', '926112233', 3),
+('João Pinto', '223344557', '2001-01-28', 'joao.pinto@lucida.edu', '927223344', 1),
+('Leonor Teixeira', '334455668', '2000-05-09', 'leonor.teixeira@omega.pt', '928334455', 2),
+('Francisco Rocha', '445566779', '1999-09-02', 'francisco.rocha@nuds.edu', '929445566', 3),
+('Matilde Coelho', '556677880', '2002-04-17', 'matilde.coelho@fava.org', '930556677', 4),
+('Gonçalo Neves', '667788991', '1998-08-20', 'goncalo.neves@novaera.edu', '931667788', 3);
 
 -- 8. EQUIPAS (depends on MODALIDADE and ASSOCIA��ES)
-INSERT INTO FADU_EQUIPA (Mod_Id, Ass_id) VALUES 
+INSERT INTO FADU_EQUIPA (Mod_Id, Ass_id) VALUES
 -- AANV teams
 (1, 1), (2, 1), (3, 1), (4, 1), (5, 1),
 -- AETA teams
@@ -132,7 +139,7 @@ INSERT INTO FADU_EQUIPA (Mod_Id, Ass_id) VALUES
 (3, 6), (6, 6), (9, 6), (12, 6), (15, 6);
 
 -- 9. ASSMODALIDADE (depends on MODALIDADE and ASSOCIA��ES)
-INSERT INTO FADU_ASSMODALIDADE (Mod_Id, Ass_Id, Number_medals) VALUES 
+INSERT INTO FADU_ASSMODALIDADE (Mod_Id, Ass_Id, Number_medals) VALUES
 (1, 1, 5), (2, 1, 3), (3, 1, 2),
 (4, 2, 4), (5, 2, 1), (6, 2, 2),
 (7, 3, 3), (8, 3, 2), (9, 3, 4),
@@ -156,7 +163,7 @@ INSERT INTO FADU_ASSMODALIDADE (Mod_Id, Ass_Id, Number_medals) VALUES (5, 6, 0);
 
 
 -- 10. MEDALHAS (depends on ASSMODALIDADE and TIPOMEDALHA)
-INSERT INTO FADU_MEDALHAS (TypeMedal_Id, [Year], Mod_Id, Ass_Id) VALUES 
+INSERT INTO FADU_MEDALHAS (TypeMedal_Id, [Year], Mod_Id, Ass_Id) VALUES
 (1, '2023', 1, 1), (2, '2023', 1, 2), (3, '2023', 1, 3),
 (1, '2024', 2, 2), (2, '2024', 2, 4), (3, '2024', 2, 1),
 (1, '2023', 4, 2), (2, '2023', 4, 3), (3, '2023', 4, 5),
@@ -165,7 +172,7 @@ INSERT INTO FADU_MEDALHAS (TypeMedal_Id, [Year], Mod_Id, Ass_Id) VALUES
 (1, '2024', 8, 1), (2, '2024', 8, 3), (3, '2024', 8, 4);
 
 -- 11. PERSONMOD (depends on PESSOAS and MODALIDADE)
-INSERT INTO FADU_PERSONMOD (Person_id, Mod_Id) VALUES 
+INSERT INTO FADU_PERSONMOD (Person_id, Mod_Id) VALUES
 (1, 1), (1, 8), (1, 9),
 (2, 2), (2, 10),
 (3, 3), (3, 11),
@@ -178,7 +185,7 @@ INSERT INTO FADU_PERSONMOD (Person_id, Mod_Id) VALUES
 (10, 10), (10, 18);
 
 -- 12. PERSONEQUIPA (depends on PESSOAS and EQUIPAS)
-INSERT INTO FADU_PERSONEQUIPA (EQUIPA_Id, Person_Id, [DateOfReg]) VALUES 
+INSERT INTO FADU_PERSONEQUIPA (EQUIPA_Id, Person_Id, [DateOfReg]) VALUES
 (1, 1, '2024-09-01'), (1, 11, '2024-09-02'), (1, 16, '2024-09-03'),
 (6, 2, '2024-09-01'), (6, 12, '2024-09-02'), (6, 17, '2024-09-03'),
 (11, 4, '2024-09-01'), (11, 14, '2024-09-02'), (11, 19, '2024-09-03'),
@@ -186,23 +193,23 @@ INSERT INTO FADU_PERSONEQUIPA (EQUIPA_Id, Person_Id, [DateOfReg]) VALUES
 (21, 6, '2024-09-01'), (21, 7, '2024-09-02'), (21, 8, '2024-09-03');
 
 -- 13. MEDPERS (depends on MEDALHAS and PESSOAS)
-INSERT INTO FADU_MEDPERS ([Year], Mod_Id, Ass_Id, Person_Id) VALUES 
+INSERT INTO FADU_MEDPERS ([Year], Mod_Id, Ass_Id, Person_Id) VALUES
 ('2023', 1, 1, 1), ('2023', 1, 2, 11), ('2023', 1, 3, 16),
 ('2024', 2, 2, 2), ('2024', 2, 4, 12), ('2024', 2, 1, 17),
 ('2023', 4, 2, 4), ('2023', 4, 3, 14), ('2023', 4, 5, 19),
 ('2024', 5, 5, 5), ('2024', 5, 2, 15), ('2024', 5, 6, 20);
 
 -- 14. JOGOS (depends on FASE, MODALIDADE, and EQUIPAS)
-INSERT INTO FADU_JOGO ([Data], Duracao, Resultado, LocalJogo, Fase_Id, Mod_Id, Equipa_id1, Equipa_id2) VALUES 
+INSERT INTO FADU_JOGO ([Data], Duracao, Resultado, LocalJogo, Fase_Id, Mod_Id, Equipa_id1, Equipa_id2) VALUES
 -- Football matches
-('2025-01-15', '01:30:00', '3-2', 'Est�dio Alfa', 1, 1, 1, 6),
-('2025-01-22', '01:30:00', '1-1', 'Est�dio Beta', 1, 1, 6, 11),
+('2025-01-15', '01:30:00', '3-2', 'Estádio Alfa', 1, 1, 1, 6),
+('2025-01-22', '01:30:00', '1-1', 'Estádio Beta', 1, 1, 6, 11),
 -- Basketball matches
-('2025-01-16', '01:00:00', '78-65', 'Pavilh�o Norte', 1, 4, 4, 9),
-('2025-01-23', '01:00:00', '72-72', 'Pavilh�o Sul', 1, 4, 9, 14),
+('2025-01-16', '01:00:00', '78-65', 'Pavilhão Norte', 1, 4, 4, 9),
+('2025-01-23', '01:00:00', '72-72', 'Pavilhão Sul', 1, 4, 9, 14),
 -- Handball matches
-('2025-01-17', '00:50:00', '28-25', 'Pavilh�o Leste', 1, 6, 6, 11),
-('2025-01-24', '00:50:00', '24-24', 'Pavilh�o Azul', 1, 6, 11, 16);
+('2025-01-17', '00:50:00', '28-25', 'Pavilhão Leste', 1, 6, 6, 11),
+('2025-01-24', '00:50:00', '24-24', 'Pavilhão Azul', 1, 6, 11, 16);
 
 -- 15. SPECIALIZED TABLES (depends on PESSOAS)
 INSERT INTO FADU_ATLETA (Person_Id) VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10);

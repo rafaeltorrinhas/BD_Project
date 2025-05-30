@@ -1,6 +1,8 @@
-drop PROCEDURE dbo.addAtlete
+drop PROCEDURE dbo.addAthlete
+drop PROCEDURE dbo.deleteAthlete
+drop PROCEDURE dbo.updateAthlete
 
-CREATE PROCEDURE dbo.addAtlete
+CREATE PROCEDURE dbo.addAthlete
     @Name varchar(64),
     @NumeroCC char(9),
     @DateBirth date,
@@ -31,7 +33,7 @@ BEGIN
 END;
 
 
-CREATE PROCEDURE dbo.deleteAtlete
+CREATE PROCEDURE dbo.deleteAthlete
     @PersonId INT
 AS
 BEGIN
@@ -51,3 +53,50 @@ BEGIN
         RAISERROR ('Error', 16, 1);
     END CATCH
 END;
+
+CREATE PROCEDURE dbo.updateAthlete
+    @Id INT,
+    @Name VARCHAR(64),
+    @NumeroCC CHAR(9),
+    @DateBirth DATE,
+    @Email VARCHAR(64),
+    @Phone CHAR(9),
+    @Ass_Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validate updates: ensure no duplicates in NumeroCC
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.FADU_PERSON
+            WHERE NumeroCC = @NumeroCC
+              AND Id <> @Id
+        )
+        BEGIN
+            THROW 50001, 'Duplicate NumeroCC detected!', 1;
+        END
+
+        -- Update athlete information
+        UPDATE dbo.FADU_PERSON
+        SET
+            Name = @Name,
+            NumeroCC = @NumeroCC,
+            DateBirth = @DateBirth,
+            Email = @Email,
+            Phone = @Phone,
+            Ass_Id = @Ass_Id
+        WHERE Id = @Id;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+go
+
