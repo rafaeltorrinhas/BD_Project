@@ -48,6 +48,6 @@ BEGIN
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION;
-        RAISERROR "Error", 16, 1;;
+        RAISERROR ('Error', 16, 1);
     END CATCH
 END;

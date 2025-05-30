@@ -1,146 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Athlete Information</title>
 
     <!-- Bootstrap CDN -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
 
     <style>
-        /* Custom Modal Styles */
-        .modal-header {
-            background-color: #007bff;
-            color: white;
-            font-size: 1.25rem;
-        }
+      /* Custom Modal Styles */
+      .modal-header {
+        background-color: #007bff;
+        color: white;
+        font-size: 1.25rem;
+      }
 
-        .modal-footer {
-            border-top: 1px solid #dee2e6;
-        }
+      .modal-footer {
+        border-top: 1px solid #dee2e6;
+      }
 
-        .modal-body input {
-            border: 1px solid #ced4da;
-            padding: 10px;
-            width: 100%;
-        }
+      .modal-body input {
+        border: 1px solid #ced4da;
+        padding: 10px;
+        width: 100%;
+      }
     </style>
-</head>
-<body>
-
-<div class="container mt-4">
-
-  <div class="container mt-4">
-
-
+  </head>
+  <body>
+    <div class="container mt-4">
+      <div class="container mt-4">
         <div class="row mb-3">
-            <div class="col-md-6">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search athlete...">
-            </div>
+          <div class="col-md-6">
+            <input
+              type="text"
+              id="searchInput"
+              class="form-control"
+              placeholder="Search athlete..."
+            />
+          </div>
         </div>
 
-
-    <!-- Table for Athletes -->
-    <h2>Athletes</h2>
-      <table class="table table-striped">
-
-            <tbody id="athletesTableBody">
-            </tbody>
-      </table>
-
-    <!-- Pagination Controls -->
-    <nav aria-label="Page navigation">
-        <ul id="pagination" class="pagination justify-content-center"></ul>
-    </nav>
-    
-
-  </div>
-    <!-- Add Info Button -->
-    <button id="openModalBtn" class="btn btn-primary">ADD INFO</button>
-</div>
-
-<!-- Bootstrap Modal -->
-<div class="modal fade" id="addInfoModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Enter Athlete Information</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form onsubmit="return handleAddAthlete(event);">
-
-                    <div class="form-group">
-                        <label for="athleteName">Name:</label>
-                        <input type="text" id="athleteName" name="athleteName" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="athleteNumeroCC">NumeroCC:</label>
-                        <input type="text" id="athleteNumeroCC" name="athleteNumeroCC" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="athleteDateBirth">Date of Birth:</label>
-                        <input type="date" id="athleteDateBirth" name="athleteDateBirth" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="athleteEmail">Email:</label>
-                        <input type="email" id="athleteEmail" name="athleteEmail" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="athletePhone">Phone:</label>
-                        <input type="text" id="athletePhone" name="athletePhone" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="athleteAssId">Association:</label>
-                            <select id="athleteAssId" name="athleteAssId" class="form-control" required>
-                                <option value="">Select Association</option>
-                            </select>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-block">Submit</button>
-                </form>
-            </div>
-        </div>
+        <!-- Table for Athletes -->
+        <h2>Athletes</h2>
+        <table class="table table-striped">
+          <tbody id="athletesTableBody"></tbody>
+        </table>
+        <!-- Pagination Controls -->
+        <nav aria-label="Page navigation">
+          <ul id="pagination" class="pagination justify-content-center"></ul>
+        </nav>
+      </div>
+      <!-- Add Info Button -->
+      <button id="openModalBtn" class="btn btn-primary">ADD INFO</button>
     </div>
-</div>
-<div class="modal fade" id="athleteDetailsModal" tabindex="-1" role="dialog" aria-labelledby="athleteDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Bootstrap Modal -->
+    <div
+      class="modal fade"
+      id="addInfoModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="athleteDetailsModalLabel">Athlete Details</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="athleteDetailsBody">
-                <!-- Athlete info will be dynamically injected here -->
-                <p>Loading athlete details...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">
+              Enter Athlete Information
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form onsubmit="return handleAddAthlete(event);">
+              <div class="form-group">
+                <label for="athleteName">Name:</label>
+                <input
+                  type="text"
+                  id="athleteName"
+                  name="athleteName"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="athleteNumeroCC">NumeroCC:</label>
+                <input
+                  type="text"
+                  id="athleteNumeroCC"
+                  name="athleteNumeroCC"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="athleteDateBirth">Date of Birth:</label>
+                <input
+                  type="date"
+                  id="athleteDateBirth"
+                  name="athleteDateBirth"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="athleteEmail">Email:</label>
+                <input
+                  type="email"
+                  id="athleteEmail"
+                  name="athleteEmail"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="athletePhone">Phone:</label>
+                <input
+                  type="text"
+                  id="athletePhone"
+                  name="athletePhone"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="athleteAssId">Association:</label>
+                <select
+                  id="athleteAssId"
+                  name="athleteAssId"
+                  class="form-control"
+                  required
+                >
+                  <option value="">Select Association</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-success btn-block">
+                Submit
+              </button>
+            </form>
+          </div>
         </div>
+      </div>
     </div>
-</div>
+    <div
+      class="modal fade"
+      id="athleteDetailsModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="athleteDetailsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="athleteDetailsModalLabel">
+              Athlete Details
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="athleteDetailsBody">
+            <!-- Athlete info will be dynamically injected here -->
+            <p>Loading athlete details...</p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- Edit Info Modal -->
+    <div
+      class="modal fade"
+      id="editInfoModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title" id="editModalLabel">
+              Edit Athlete Information
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form onsubmit="return handleEditAthlete(event);">
+              <input type="hidden" id="editAthleteId" />
+              <div class="form-group">
+                <label for="editAthleteName">Name:</label>
+                <input
+                  type="text"
+                  id="editAthleteName"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAthleteNumeroCC">NumeroCC:</label>
+                <input
+                  type="text"
+                  id="editAthleteNumeroCC"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAthleteDateBirth">Date of Birth:</label>
+                <input
+                  type="date"
+                  id="editAthleteDateBirth"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAthleteEmail">Email:</label>
+                <input
+                  type="email"
+                  id="editAthleteEmail"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAthletePhone">Phone:</label>
+                <input
+                  type="text"
+                  id="editAthletePhone"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAthleteAssId">Association:</label>
+                <select id="editAthleteAssId" class="form-control" required>
+                  <option value="">Select Association</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-warning btn-block">
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- Bootstrap JS and dependencies (jQuery and Popper.js) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/Inscritos.js') }}"></script>
 
-<!-- Add Info Button -->
-<button id="openModalBtn" class="btn btn-primary">ADD INFO</button>
-
-<!-- Bootstrap JS and dependencies (jQuery and Popper.js) -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script src="{{ url_for('static', filename='js/Inscritos.js') }}"></script>
-<script>
-   
-
-</script>
-
-
-</body>
+    <script></script>
+  </body>
 </html>

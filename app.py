@@ -1,7 +1,7 @@
 import os
 import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, jsonify, request,redirect, url_for
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 import pyodbc
 import math
 
@@ -371,11 +371,10 @@ def callUserPro(query, params=None):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        
-        cursor.execute(query, params) 
-        
-        
-        cnxn.commit()  
+
+        cursor.execute(query, params)
+
+        cnxn.commit()
         cursor.close()
         cnxn.close()
         return "Sucess"
@@ -383,20 +382,19 @@ def callUserPro(query, params=None):
     except Exception as e:
         print(f"Error: {e}")
 
+
 @app.route('/Inscritos', methods=['GET'])
 def inscritos_page():
-    return render_template('inscritos.html')  
-
-
+    return render_template('inscritos.html')
 
 
 @app.route('/api/search_athletes', methods=['GET'])
 def search_athletes():
     search = request.args.get('search', '').strip()
-    per_page = 15  
+    per_page = 15
 
     if len(search) < 2:
-        return jsonify([])  
+        return jsonify([])
 
     query = '''
     SELECT 
@@ -413,10 +411,9 @@ def search_athletes():
     '''
     athletes_cols, athletes_data = getInfo(query, [f'%{search}%'])
 
-    results = [ [row[0], row[1]] for row in athletes_data]
+    results = [[row[0], row[1]] for row in athletes_data]
     response = [{'columns': athletes_cols, 'rows': results}]
     return jsonify(response)
-
 
 
 @app.route('/api/associacoes', methods=['GET'])
@@ -426,9 +423,9 @@ def api_get_associacoes():
     return jsonify({'columns': associations_cols, 'rows': associations_data})
 
 
-@app.route('/api/inscritos', methods=['POST','GET'])
+@app.route('/api/inscritos', methods=['POST', 'GET'])
 def api_add_athlete():
-    if(request.method == 'POST'):
+    if (request.method == 'POST'):
         nome = request.form.get('athleteName', '').strip()
         numero_cc = request.form.get('athleteNumeroCC', '').strip()
         date_birth = request.form.get('athleteDateBirth', '').strip()
@@ -441,7 +438,8 @@ def api_add_athlete():
         EXEC dbo.addAtlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
         SELECT @NewPersonId;
         '''
-        callUserPro(callUserProcessure, [nome, numero_cc, date_birth, email, phone, ass_id])
+        callUserPro(callUserProcessure, [
+                    nome, numero_cc, date_birth, email, phone, ass_id])
         return jsonify({'status': 'success'})
     else:
         page = request.args.get('page', 1, type=int)
@@ -461,7 +459,8 @@ def api_add_athlete():
         OFFSET ? ROWS
         FETCH NEXT ? ROWS ONLY;
         '''
-        athletes_cols, athletes_data = getInfo(athletes_query, [offset, per_page])
+        athletes_cols, athletes_data = getInfo(
+            athletes_query, [offset, per_page])
 
         count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
         total_athletes = getInfo(count_query)[1][0][0]
@@ -474,6 +473,7 @@ def api_add_athlete():
             'total_pages': total_pages,
             'current_page': page
         }
+        print(response)
         return jsonify(response)
 
 
@@ -490,6 +490,100 @@ def api_delete_athlete(athlete):
         # Log the error (optional)
         print(f"Error deleting athlete: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/athlete/<int:athlete_id>', methods=['PUT'])
+def update_athlete(athlete_id):
+    nome = request.form.get('athleteName', '').strip()
+    numero_cc = request.form.get('athleteNumeroCC', '').strip()
+    date_birth = request.form.get('athleteDateBirth', '').strip()
+    email = request.form.get('athleteEmail', '').strip()
+    phone = request.form.get('athletePhone', '').strip()
+    ass_id = request.form.get('athleteAssId', '').strip()
+
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+
+        # Start the transaction
+        cursor.execute("BEGIN TRANSACTION;")
+
+        # Validate NumeroCC uniqueness (optional)
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM dbo.FADU_PERSON
+            WHERE NumeroCC = ? AND Id <> ?
+        """, (numero_cc, athlete_id))
+        duplicate_count = cursor.fetchone()[0]
+        if duplicate_count > 0:
+            cursor.execute("ROLLBACK TRANSACTION;")
+            return jsonify({'status': 'error', 'message': 'Duplicate NumeroCC detected.'}), 400
+
+        # Update the athlete details
+        update_query = """
+            UPDATE dbo.FADU_PERSON
+            SET Name = ?, 
+                NumeroCC = ?, 
+                DateBirth = ?, 
+                Email = ?, 
+                Phone = ?, 
+                Ass_Id = ?
+            WHERE Id = ?
+        """
+        cursor.execute(update_query, (nome, numero_cc,
+                       date_birth, email, phone, ass_id, athlete_id))
+
+        # Commit the transaction
+        cursor.execute("COMMIT TRANSACTION;")
+        cnxn.commit()
+
+        cursor.close()
+        cnxn.close()
+
+        return jsonify({'status': 'success'}), 200
+
+    except Exception as e:
+        print(f"Error updating athlete: {e}")
+        try:
+            cursor.execute("ROLLBACK TRANSACTION;")
+        except:
+            pass
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/athlete/<int:athlete_id>', methods=['GET'])
+def get_athlete_details(athlete_id):
+    query = """
+    SELECT 
+        P.Id,
+        P.Name,
+        P.NumeroCC,
+        P.DateBirth,
+        P.Email,
+        P.Phone,
+        A.Name AS AssociationName
+    FROM dbo.FADU_PERSON P
+    INNER JOIN dbo.FADU_ATLETA AT ON P.Id = AT.Person_Id
+    INNER JOIN dbo.FADU_ASSOCIAÇAO_ACADEMICA A ON P.Ass_Id = A.Id
+    WHERE P.Id = ?
+    """
+    cols, rows = getInfo(query, (athlete_id,))
+
+    if rows:
+        row = rows[0]
+        athlete = {
+            'id': row[0],
+            'name': row[1],
+            'numeroCC': row[2],
+            # Ensure date formatting
+            'dateBirth': row[3][:10] if row[3] else None,
+            'email': row[4],
+            'phone': row[5],
+            'associationName': row[6]
+        }
+        return jsonify(status='success', athlete=athlete)
+    else:
+        return jsonify(status='error', message='Athlete not found'), 404
 
 
 if __name__ == '__main__':

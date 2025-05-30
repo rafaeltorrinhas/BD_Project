@@ -14,11 +14,11 @@ BEGIN
             GROUP BY Mod_Id, Ass_Id
         ) AS D ON AM.Mod_Id = D.Mod_Id AND AM.Ass_Id = D.Ass_Id;
 
-        DELETE FROM FADU_MEDPERS
-        WHERE (Mod_Id, Ass_Id, Year) IN (
-            SELECT Mod_Id, Ass_Id, Year
-            FROM deleted
-        );
+        DELETE MP
+        FROM FADU_MEDPERS MP
+        INNER JOIN deleted D
+        ON MP.Mod_Id = D.Mod_Id AND MP.Ass_Id = D.Ass_Id AND MP.Year = D.Year;
+
 
         COMMIT TRANSACTION;
     END TRY
