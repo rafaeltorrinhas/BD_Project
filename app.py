@@ -1,8 +1,10 @@
 import os
 import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import pyodbc
+import math
+
 
 load_dotenv()
 
@@ -365,54 +367,85 @@ def get_Ass_Id(AssId):
                            referees=referees_data)
 
 
-@app.route('/Inscritos')
+def callUserPro(query, params=None):
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        
+        cursor.execute(query, params) 
+        
+        
+        cnxn.commit()  
+        cursor.close()
+        cnxn.close()
+        return "Sucess"
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+@app.route('/Inscritos', methods=['GET', 'POST'])
 def getAtletas():
+    page = request.args.get('page', 1, type=int)  # Get page from query parameters
+    per_page = 15  # Number of items per page
+    offset = (page - 1) * per_page  # Calculate offset based on the page number
+    
     # Query for all athletes
+    if request.method == 'POST':
+        nome = request.form.get('athleteName', '').strip()
+        numero_cc = request.form.get('athleteNumeroCC', '').strip()
+        date_birth = request.form.get('athleteDateBirth', '').strip()
+        email = request.form.get('athleteEmail', '').strip()
+        phone = request.form.get('athletePhone', '').strip()
+        ass_id = request.form.get('athleteAssId', '').strip()
+        
+        # Insert into the database
+        callUserProcessure =  '''
+        DECLARE @NewPersonId INT;
+        EXEC dbo.addAtlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
+        SELECT @NewPersonId;
+        '''
+        print(callUserProcessure)
+        callUserPro(callUserProcessure, [nome, numero_cc, date_birth, email, phone, ass_id])
+        return "Athlete data has been successfully added!"
+    
+    # Query to get paginated athletes
     athletes_query = '''
-    SELECT 
+     SELECT 
         person.Id AS Person_Id,
         person.Name AS Athlete_Name
     FROM 
         FADU_ATLETA atle
     JOIN 
         FADU_PERSON person ON person.Id = atle.Person_Id
+    ORDER BY 
+        person.Id
+    OFFSET ? ROWS
+    FETCH NEXT ? ROWS ONLY;
     '''
-
-    # Query for all coaches
-    coaches_query = '''
-    SELECT 
-        person.Id AS Person_Id,
-        person.Name AS Coach_Name
-    FROM 
-        FADU_TREINADOR coach
-    JOIN 
-        FADU_PERSON person ON person.Id = coach.Person_Id
-    '''
-
-    # Query for all referees
-    referees_query = '''
-    SELECT 
-        person.Id AS Person_Id,
-        person.Name AS Referee_Name
-    FROM 
-        FADU_ARBITRO arb
-    JOIN 
-        FADU_PERSON person ON person.Id = arb.Person_Id
-    '''
-
-    # Execute the queries and get the results
-    athletes_cols, athletes_data = getInfo(athletes_query)
-    coaches_cols, coaches_data = getInfo(coaches_query)
-    referees_cols, referees_data = getInfo(referees_query)
-
-    # Return the rendered template with all the necessary data
+    
+    # Execute the queries to get the results
+    athletes_cols, athletes_data = getInfo(athletes_query, [offset, per_page])
+    
+    # Query to get total number of athletes for pagination
+    count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
+    total_athletes = getInfo(count_query)[1][0][0]
+    associations_query = "SELECT Id, Name FROM FADU_ASSOCIAÇAO_ACADEMICA"
+    associations_cols,associations_data = getInfo(associations_query)
+    # Calculate total number of pages
+    total_pages = math.ceil(total_athletes / per_page)
+    print(athletes_data)
+    # Render the template with the appropriate data
+    print(total_athletes)
     return render_template('inscritos.html',
                            athletes_columns=athletes_cols,
                            athletes=athletes_data,
-                           coaches_columns=coaches_cols,
-                           coaches=coaches_data,
-                           referees_columns=referees_cols,
-                           referees=referees_data)
+                           total_pages=total_pages,
+                           current_page=page,
+                           total_athletes=total_athletes,
+                           associations_cols=associations_cols,
+                        associations=associations_data
+                           )
+
 
 
 @app.route('/api/Inscritos')
