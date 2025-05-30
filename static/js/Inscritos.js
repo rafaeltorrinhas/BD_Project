@@ -110,6 +110,10 @@ function renderAthletesTable(athletes) {
                 <a href="#" id="delete-athlete" data-id="${athlete.id}" title="Delete">
                     <i class="fas fa-trash-alt"></i>
                 </a>
+                <a href="#" class="view-athlete" data-id="${athlete.id}" title="View Info">
+                    <i class="fas fa-info-circle"></i>
+                </a>
+
 
             </td>
         `;
@@ -169,4 +173,42 @@ function loadAssociations() {
             });
         })
         .catch(error => console.error('Error fetching associations:', error));
+}
+
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.view-athlete')) {
+        e.preventDefault();
+        const athleteId = e.target.closest('.view-athlete').getAttribute('data-id');
+        showAthleteDetails(athleteId);
+    }
+});
+
+function showAthleteDetails(athleteId) {
+    // For now, we'll use a static object instead of fetching from an API
+    const athlete = {
+        id: athleteId,
+        name: "John Doe",
+        numeroCC: "12345678",
+        dateBirth: "1990-01-01",
+        email: "john.doe@example.com",
+        phone: "123-456-7890",
+        associationName: "Example Association"
+    };
+
+    renderAthleteDetails(athlete);
+    $('#athleteDetailsModal').modal('show');
+}
+
+function renderAthleteDetails(athlete) {
+    const body = document.getElementById('athleteDetailsBody');
+    body.innerHTML = `
+        <dl class="row">
+            <dt class="col-sm-4">Name:</dt><dd class="col-sm-8">${athlete.name}</dd>
+            <dt class="col-sm-4">NumeroCC:</dt><dd class="col-sm-8">${athlete.numeroCC}</dd>
+            <dt class="col-sm-4">Date of Birth:</dt><dd class="col-sm-8">${athlete.dateBirth}</dd>
+            <dt class="col-sm-4">Email:</dt><dd class="col-sm-8">${athlete.email}</dd>
+            <dt class="col-sm-4">Phone:</dt><dd class="col-sm-8">${athlete.phone}</dd>
+            <dt class="col-sm-4">Association:</dt><dd class="col-sm-8">${athlete.associationName}</dd>
+        </dl>
+    `;
 }
