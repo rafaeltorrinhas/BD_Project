@@ -417,39 +417,6 @@ def search_athletes():
     response = [{'columns': athletes_cols, 'rows': results}]
     return jsonify(response)
 
-@app.route('/api/inscritos', methods=['GET'])
-def api_get_athletes():
-    page = request.args.get('page', 1, type=int)
-    per_page = 15
-    offset = (page - 1) * per_page
-
-    athletes_query = '''
-     SELECT 
-        person.Id AS Person_Id,
-        person.Name AS Athlete_Name
-    FROM 
-        FADU_ATLETA atle
-    JOIN 
-        FADU_PERSON person ON person.Id = atle.Person_Id
-    ORDER BY 
-        person.Id
-    OFFSET ? ROWS
-    FETCH NEXT ? ROWS ONLY;
-    '''
-    athletes_cols, athletes_data = getInfo(athletes_query, [offset, per_page])
-
-    count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
-    total_athletes = getInfo(count_query)[1][0][0]
-    total_pages = math.ceil(total_athletes / per_page)
-
-    response = {
-        'columns': athletes_cols,
-        'rows': athletes_data,
-        'total_athletes': total_athletes,
-        'total_pages': total_pages,
-        'current_page': page
-    }
-    return jsonify(response)
 
 
 @app.route('/api/associacoes', methods=['GET'])
@@ -459,26 +426,70 @@ def api_get_associacoes():
     return jsonify({'columns': associations_cols, 'rows': associations_data})
 
 
-@app.route('/api/inscritos', methods=['POST'])
+@app.route('/api/inscritos', methods=['POST','GET'])
 def api_add_athlete():
-    data = request.json
-    nome = data.get('athleteName', '').strip()
-    numero_cc = data.get('athleteNumeroCC', '').strip()
-    date_birth = data.get('athleteDateBirth', '').strip()
-    email = data.get('athleteEmail', '').strip()
-    phone = data.get('athletePhone', '').strip()
-    ass_id = data.get('athleteAssId', '').strip()
+    if(request.method == 'POST'):
+        nome = request.form.get('athleteName', '').strip()
+        numero_cc = request.form.get('athleteNumeroCC', '').strip()
+        date_birth = request.form.get('athleteDateBirth', '').strip()
+        email = request.form.get('athleteEmail', '').strip()
+        phone = request.form.get('athletePhone', '').strip()
+        ass_id = request.form.get('athleteAssId', '').strip()
 
-    callUserProcessure = '''
-    DECLARE @NewPersonId INT;
-    EXEC dbo.addAtlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
-    SELECT @NewPersonId;
-    '''
-    callUserPro(callUserProcessure, [nome, numero_cc, date_birth, email, phone, ass_id])
-    return jsonify({'status': 'success'})
+        callUserProcessure = '''
+        DECLARE @NewPersonId INT;
+        EXEC dbo.addAtlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
+        SELECT @NewPersonId;
+        '''
+        callUserPro(callUserProcessure, [nome, numero_cc, date_birth, email, phone, ass_id])
+        return jsonify({'status': 'success'})
+    else:
+        page = request.args.get('page', 1, type=int)
+        per_page = 15
+        offset = (page - 1) * per_page
+
+        athletes_query = '''
+        SELECT 
+            person.Id AS Person_Id,
+            person.Name AS Athlete_Name
+        FROM 
+            FADU_ATLETA atle
+        JOIN 
+            FADU_PERSON person ON person.Id = atle.Person_Id
+        ORDER BY 
+            person.Id
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
+        '''
+        athletes_cols, athletes_data = getInfo(athletes_query, [offset, per_page])
+
+        count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
+        total_athletes = getInfo(count_query)[1][0][0]
+        total_pages = math.ceil(total_athletes / per_page)
+
+        response = {
+            'columns': athletes_cols,
+            'rows': athletes_data,
+            'total_athletes': total_athletes,
+            'total_pages': total_pages,
+            'current_page': page
+        }
+        return jsonify(response)
 
 
-
+@app.route('/api/inscritos/<athlete>', methods=['DELETE'])
+def api_delete_athlete(athlete):
+    try:
+        athlete = int(athlete)
+        callUserProcedure = '''
+        EXEC dbo.deleteAtlete ? ;
+        '''
+        callUserPro(callUserProcedure, [athlete])
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        # Log the error (optional)
+        print(f"Error deleting athlete: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 if __name__ == '__main__':

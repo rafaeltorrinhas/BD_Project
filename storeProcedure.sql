@@ -29,3 +29,25 @@ BEGIN
     SET @NewPersonId = @ToReturn;
 
 END;
+
+
+CREATE PROCEDURE dbo.deleteAtlete
+    @PersonId INT
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DELETE FROM FADU_ATLETA
+        WHERE Person_Id = @PersonId;
+
+        DELETE FROM FADU_PERSON
+        WHERE Id = @PersonId;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        RAISERROR "Error", 16, 1;;
+    END CATCH
+END;

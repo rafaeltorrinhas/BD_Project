@@ -31,36 +31,48 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+
+
     document.getElementById('openModalBtn').addEventListener('click', function () {
         $('#addInfoModal').modal('show');
     });
 
-    document.querySelector('#addInfoModal form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const payload = {
-            athleteName: document.getElementById('athleteName').value,
-            athleteNumeroCC: document.getElementById('athleteNumeroCC').value,
-            athleteDateBirth: document.getElementById('athleteDateBirth').value,
-            athleteEmail: document.getElementById('athleteEmail').value,
-            athletePhone: document.getElementById('athletePhone').value,
-            athleteAssId: document.getElementById('athleteAssId').value
-        };
 
-        fetch('/api/inscritos', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    $('#addInfoModal').modal('hide');
-                    loadAthletes(1);
-                }
-            })
-            .catch(error => console.error('Error adding athlete:', error));
-    });
 });
+function handleAddAthlete(event) {
+    event.preventDefault(); // prevent the default form submission
+
+    const payload = new URLSearchParams({
+        athleteName: document.getElementById('athleteName').value,
+        athleteNumeroCC: document.getElementById('athleteNumeroCC').value,
+        athleteDateBirth: document.getElementById('athleteDateBirth').value,
+        athleteEmail: document.getElementById('athleteEmail').value,
+        athletePhone: document.getElementById('athletePhone').value,
+        athleteAssId: document.getElementById('athleteAssId').value
+    });
+
+    console.log('Processing add athlete request...');
+
+    fetch('/api/inscritos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload.toString()
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                $('#addInfoModal').modal('hide');
+                history.replaceState({}, document.title, window.location.pathname);
+                loadAthletes(1);
+            } else {
+                console.error('Server error:', data.message);
+            }
+        })
+        .catch(error => console.error('Error adding athlete:', error));
+
+    return false; // just in case it's called from inline onsubmit
+}
+
 
 function loadAthletes(page) {
     return fetch(`/api/inscritos?page=${page}`)
@@ -91,7 +103,15 @@ function renderAthletesTable(athletes) {
         row.innerHTML = `
             <td>${athlete[0]}</td>
             <td>${athlete[1]}</td>
-            <td><a href="/edit-athlete/${athlete[0]}"><i class="fas fa-edit"></i></a></td>
+            <td>
+                <a href="/edit-athlete/${athlete.id}" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="#" id="delete-athlete" data-id="${athlete.id}" title="Delete">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
+
+            </td>
         `;
         tbody.appendChild(row);
     });
