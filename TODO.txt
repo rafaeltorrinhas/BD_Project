@@ -9,6 +9,8 @@ TODO:
         - AO EDITAR NOMES, EDITAR EM TODO O LADO nao sei se faz automatico
         - colocar número maximo de JOGADORES por MODALIDADE euipa se for dauela modalidade nao pode ter asima dos jogadores maximos # TA FEITO
         - adicioanr vitiorias na ass mod por TRIGGERS
+        - adcionar o show data to players 
+        - adcioanr a possibilidade de EDITAR 
 
     - FAZER FILTROS
     
