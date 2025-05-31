@@ -26,28 +26,50 @@
       font-size: 1rem;
     }
   </style>
+      <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
 </head>
 <body>
+  
+<!-- Modern Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
 
-  <div class="navbar">
-    <h1>FADU Project</h1>
-    <select id="tableSelect">
-      <option value=""></option>
-      <option value="/Uni" {% if title == "Universidades" %}selected{% endif %}>Universidades</option>
-      <option value="/Ass" {% if title == "Associações" %}selected{% endif %}>Associações</option>
-      <option value="/Jogos" {% if title == "Jogos" %}selected{% endif %}>Jogos</option>
-      <option value="/Fases" {% if title == "Fases" %}selected{% endif %}>Fases</option>
-      <option value="/Inscritos" {% if title == "Inscritos" %}selected{% endif %}>Inscritos</option>
-    </select>
-  </div>
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="" selected>— Selecionar Vista —</option>
+            <option value="/Uni">🏛️ Universidades</option>
+            <option value="/Ass">🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases">📅 Fases</option>
+            <option value="/Inscritos" >👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
 
   <script>
-    document.getElementById("tableSelect").addEventListener("change", function () {
-      const path = this.value;
-      if (path) {
-        window.location.href = path;
-      }
-    });
+
+    function navigateToPage(url) {
+    if (url && url !== "#") {
+        window.location.href = url;
+    }
+}
   </script>
 
 </body>

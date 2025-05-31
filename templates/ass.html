@@ -48,19 +48,40 @@
         cursor: pointer;
       }
     </style>
+          <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
   <body>
-    <div class="navbar">
-      <h1>FADU Project</h1>
-      <select id="tableSelect">
-        <option value="">— Selecionar Vista —</option>
-        <option value="/Uni">Universidades</option>
-        <option value="/Ass" selected>Associações</option>
-        <option value="/Jogos">Jogos</option>
-        <option value="/Fases">Fases</option>
-        <option value="/Inscritos" >Inscritos</option>
-      </select>
-    </div>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
+
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="">— Selecionar Vista —</option>
+            <option value="/Uni">🏛️ Universidades</option>
+            <option value="/Ass" selected>🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases">📅 Fases</option>
+            <option value="/Inscritos" >👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
 
     <div class="content">
       <h2>Associações</h2>
@@ -93,14 +114,11 @@
     </div>
 
     <script>
-      document
-        .getElementById("tableSelect")
-        .addEventListener("change", function () {
-          const path = this.value;
-          if (path) {
-            window.location.href = path;
+          function navigateToPage(url) {
+              if (url && url !== "#") {
+                  window.location.href = url;
+              }
           }
-        });
 
       function verDetalhes(id) {
         window.location.href = `/Ass/${id}`;
