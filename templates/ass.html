@@ -82,36 +82,41 @@
         </div>
       </div>
     </nav>
+    <div class="container">
+      <div class="main-container fade-in">
 
-    <div class="content">
-      <h2>Associações</h2>
-      <table>
-        <thead>
-          <tr>
-            {% for col in columns %}
-            <th>{{ col }}</th>
-            {% endfor %}
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            {% for cell in row %}
-            <td>{{ cell }}</td>
-            {% endfor %}
-            <td>
-              <button onclick="verDetalhes('{{ row[0] }}')">
-                Ver Detalhes
-              </button>
-            </td>
-          </tr>
-          <tr>
-            {% endfor %}
-          </tr>
-        </tbody>
-      </table>
+        <div class="table-container">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-hashtag mr-2"></i>ID</th>
+                  <th><i class="fas fa-user mr-2"></i>Nome</th>
+                  <th><i class="fas fa-cogs mr-2"></i>Sigla</th>
+                  <th><i class="fas fa-hashtag mr-2"></i>Modaliades</th>
+                  <th><i class="fas fa-hashtag mr-2"></i>Ouro</th>
+                  <th><i class="fas fa-user mr-2"></i>Prata</th>
+                  <th><i class="fas fa-cogs mr-2"></i>Bronze</th>
+                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="accTableBody">
+                <!-- Athletes will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <nav aria-label="Navegação de páginas">
+          <ul id="pagination" class="pagination justify-content-center"></ul>
+        </nav>
+
+      </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/Ass.js') }}"></script>
 
     <script>
           function navigateToPage(url) {
@@ -123,6 +128,7 @@
       function verDetalhes(id) {
         window.location.href = `/Ass/${id}`;
       }
+      
     </script>
   </body>
 </html>

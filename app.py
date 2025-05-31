@@ -127,35 +127,107 @@ def get_uni():
 @app.route('/Ass/')
 def get_ass():
 
-    cols, serialized, =    getInfo(
-        '''
-            SELECT
-                ass.Id AS Id,
-                ass.Name AS Nome,
-                ass.Sigla AS Sigla,
-                STRING_AGG(mod.Name, ', ') AS Modalidades,
-                SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS Ouro,
-                SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
-                SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
+    return render_template('ass.html', title='Associações')
 
-            FROM
-                FADU_ASSOCIAÇAO_ACADEMICA ass
-            LEFT JOIN
-                FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
-            LEFT JOIN
-                FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
-            LEFT JOIN
-                FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
-            LEFT JOIN
-                FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
-            GROUP BY
-                ass.Id, ass.Name, ass.Sigla
-            ORDER BY
-                ass.Id
+
+
+@app.route('/api/AssInfo')
+def get_Acc_Info():
+        page = request.args.get('page', 1, type=int)
+        per_page = 15
+        offset = (page - 1) * per_page
+
+        filters = []
+        params = []
+
+        # Filter: acc Name
+        acc_name = request.args.get('acc_name', '').strip()
+        if acc_name:
+            filters.append("ass.Name LIKE ?")
+            params.append(f"%{acc_name}%")
+
+
+        # Sorting
+        sort_by = request.args.get('sort_by', '').strip()
+        sort_clause = "ORDER BY ass.Id"
+        if sort_by:
+            sort_map = {
+                "name_asc": "ass.Name ASC",
+                "name_desc": "ass.Name DESC",
+                "sigla_asc": "ass.Sigla ASC",
+                "sigla_desc": "ass.Sigla DESC",
+                "ouro_asc" : "Ouro ASC",
+                "ouro_desc" : "Ouro DESC",
+                "prata_asc": "Prata ASC",
+                "prata_desc": "Prata DESC",
+                "bronze_asc": "Bronze ASC",
+                "bronze_desc": "Bronze DESC"
+            }
+            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'ass.Id')}"
+
+        # Base query
+        query = (
             '''
-    )
+                SELECT
+                    ass.Id AS Id,
+                    ass.Name AS Nome,
+                    ass.Sigla AS Sigla,
+                    STRING_AGG(mod.Name, ', ') AS Modalidades,
+                    SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS Ouro,
+                    SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
+                    SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
 
-    return render_template('ass.html', title='Associações', columns=cols, rows=serialized)
+                FROM
+                    FADU_ASSOCIAÇAO_ACADEMICA ass
+                LEFT JOIN
+                    FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
+                LEFT JOIN
+                    FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
+                LEFT JOIN
+                    FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
+                LEFT JOIN
+                    FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
+                GROUP BY
+                    ass.Id, ass.Name, ass.Sigla
+
+                '''
+        )
+
+        if filters:
+            query += " WHERE " + " AND ".join(filters)
+
+        query += f'''
+        {sort_clause}
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
+        '''
+        params_with_paging = params + [offset, per_page]
+        associations_cols, associations_data = getInfo(query, params_with_paging)
+
+        # Count query for pagination
+        count_query = '''
+        SELECT COUNT(*) 
+        FROM 
+            FADU_ASSOCIAÇAO_ACADEMICA 
+        '''
+        if filters:
+            count_query += " WHERE " + " AND ".join(filters)
+
+        count_cols, count_data = getInfo(count_query, params)
+        total_ass = count_data[0][0] if count_data else 0
+        total_pages = math.ceil(total_ass / per_page)
+
+
+    
+        
+        response = {
+            'columns': associations_cols,
+            'rows': associations_data,
+            'total_ass': total_ass,
+            'total_pages': total_pages,
+            'current_page': page
+        }
+        return jsonify(response)
 
 
 @app.route('/Jogos/')
