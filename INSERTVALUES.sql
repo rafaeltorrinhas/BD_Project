@@ -215,3 +215,16 @@ INSERT INTO FADU_JOGO ([Data], Duracao, Resultado, LocalJogo, Fase_Id, Mod_Id, E
 INSERT INTO FADU_ATLETA (Person_Id) VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 INSERT INTO FADU_TREINADOR (Person_Id) VALUES (11), (12), (13), (14), (15);
 INSERT INTO FADU_ARBITRO (Person_Id) VALUES (16), (17), (18), (19), (20);
+
+
+-- 2. Enable explicit identity insert
+SET IDENTITY_INSERT dbo.FADU_PERSON ON;
+
+-- 3. Insert the dummy row with ID = -1
+INSERT INTO dbo.FADU_PERSON
+    (Id, Name, NumeroCC, DateBirth, Email, Phone, Ass_Id)
+VALUES
+    (0, 'Dummy Person', '000000000', '1900-01-01', 'dummy@dummy.com', '000000000', 1);
+
+-- 4. Disable explicit identity insert
+SET IDENTITY_INSERT dbo.FADU_PERSON OFF;

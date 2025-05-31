@@ -423,6 +423,12 @@ def api_get_associacoes():
     return jsonify({'columns': associations_cols, 'rows': associations_data})
 
 
+@app.route('/api/modalidades', methods=['GET'])
+def api_get_modalidades():
+    modalidades_query = "SELECT Id, Name  from FADU_MODALIDADE"
+    modalidades_cols, modalidades_data = getInfo(modalidades_query)
+    return jsonify({'columns': modalidades_cols, 'rows': modalidades_data})
+
 # @app.route('/api/inscritos', methods=['POST', 'GET'])
 # def api_add_athlete():
 #     if (request.method == 'POST'):
@@ -572,14 +578,14 @@ def api_add_athlete():
         email = request.form.get('athleteEmail', '').strip()
         phone = request.form.get('athletePhone', '').strip()
         ass_id = request.form.get('athleteAssId', '').strip()
-
+        modalidadesIds = request.form.get('modalidadesIds', '').strip()
         callUserProcessure = '''
         DECLARE @NewPersonId INT;
-        EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
+        EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
         SELECT @NewPersonId;
         '''
         callUserPro(callUserProcessure, [
-                    nome, numero_cc, date_birth, email, phone, ass_id])
+                    nome, numero_cc, date_birth, email, phone, ass_id,modalidadesIds])
         return jsonify({'status': 'success'})
     else:
         page = request.args.get('page', 1, type=int)

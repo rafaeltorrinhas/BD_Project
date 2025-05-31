@@ -320,6 +320,19 @@
                   <option value="">Selecionar Associação</option>
                 </select>
               </div>
+                                                    <!-- Modalidades Section -->
+                        <div class="mb-3">
+                            <label class="form-label">Sports Modalidades *</label>
+                            <input type="text" class="form-control search-modalidades" id="searchModalidades" placeholder="Search modalidades...">
+                            <div class="modalidades-container" id="modalidadesContainer">
+                                <!-- Modalidades checkboxes will be loaded here -->
+                            </div>
+                            <div class="selected-modalidades" id="selectedModalidades">
+                                <small class="text-muted">Modaliades selecionadas aparecem aui </small>
+                            </div>
+                            <input type="hidden" id="selectedModalidadesIds" name="selectedModalidadesIds">
+                        </div>
+
               <button
                 type="submit"
                 class="btn btn-success btn-block"
@@ -467,6 +480,7 @@
                   <option value="">Selecionar Associação</option>
                 </select>
               </div>
+
               <button
                 type="submit"
                 class="btn btn-warning btn-block"
