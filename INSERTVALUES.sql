@@ -40,7 +40,7 @@ SELECT Id FROM FADU_FASE;
 
 
 -- 3. MODALIDADE (no dependencies)
-INSERT INTO FADU_MODALIDADE ([Name], [MaxPlayers]) VALUES
+INSERT INTO FADU_MODALIDADE ([Name], [NumeroMaxPlayers]) VALUES
 ('Futebol', 11),
 ('Futebol Feminino', 11),
 ('Futsal', 5),
@@ -228,3 +228,4 @@ VALUES
 
 -- 4. Disable explicit identity insert
 SET IDENTITY_INSERT dbo.FADU_PERSON OFF;
+

@@ -559,6 +559,21 @@ def api_get_associacoes():
         return jsonify({'columns': associations_cols, 'rows': associations_data})
 
 
+@app.route('/api/associacoes/<acc>', methods=['DELETE'])
+def api_delete_acc(acc):
+    print(acc)
+    try:
+        acc = int(acc)
+        callUserProcedure = '''
+            EXEC dbo.deleteAcc ? ;
+        '''
+        callUserPro(callUserProcedure, [acc])
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        print(f"Error deleting athlete: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 
 
 @app.route('/api/search_associacoes', methods=['GET'])

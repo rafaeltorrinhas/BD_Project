@@ -1,6 +1,9 @@
 drop PROCEDURE dbo.addAthlete
 drop PROCEDURE dbo.deleteAthlete
 drop PROCEDURE dbo.updateAthlete
+drop PROCEDURE dbo.deleteAcc
+drop PROCEDURE dbo.addAss
+go
 
 CREATE PROCEDURE dbo.addAthlete
     @Name VARCHAR(64),
@@ -64,7 +67,7 @@ BEGIN
         THROW;
     END CATCH;
 END;
-
+go
 
 
 CREATE PROCEDURE dbo.deleteAthlete
@@ -90,7 +93,7 @@ BEGIN
         RAISERROR ('Error', 16, 1);
     END CATCH
 END;
-
+go
 CREATE PROCEDURE dbo.updateAthlete
     @Id INT,
     @Name VARCHAR(64),
@@ -142,7 +145,7 @@ go
 CREATE PROCEDURE dbo.addAss
     @assName VARCHAR(64),
     @assSigla VARCHAR(100),
-    @universityAddress VARCHAR(100)
+    @universityAddress VARCHAR(100),
     @NewAccId INT OUTPUT
 AS
 BEGIN
@@ -176,4 +179,52 @@ BEGIN
 
         THROW;
     END CATCH;
+END;
+go
+
+CREATE PROCEDURE dbo.deleteAcc
+    @Acc INT
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DELETE FROM FADU_ASSMODALIDADE
+        WHERE Ass_Id = @Acc;
+
+        DELETE FROM FADU_MEDALHAS
+        WHERE Ass_Id = @Acc;
+
+        UPDATE  FADU_PERSON
+        SET Ass_id = NULL
+        WHERE Ass_Id = @Acc;
+
+        DELETE FROM FADU_JOGO
+        WHERE Equipa_id1 IN (SELECT Id FROM FADU_EQUIPA WHERE Ass_id = @Acc)
+        OR Equipa_id2 IN (SELECT Id FROM FADU_EQUIPA WHERE Ass_id = @Acc);
+
+        DELETE FROM FADU_PERSONEQUIPA
+        WHERE EQUIPA_Id IN (
+            SELECT Id FROM FADU_EQUIPA WHERE Ass_id = @Acc
+        );
+
+        DELETE FROM FADU_EQUIPA WHERE Ass_id = @Acc;
+
+
+        UPDATE FADU_UNIVERSIDADE
+        set Ass_Id = NULL
+        WHERE Ass_Id = @Acc;
+
+        DELETE FROM [FADU_ASSOCIAÇAO_ACADEMICA]
+        WHERE Id  = @Acc;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+            DECLARE @ErrorMessage NVARCHAR(4000);
+            SET @ErrorMessage = ERROR_MESSAGE();
+            RAISERROR (@ErrorMessage, 16, 1);
+            RAISERROR ('Error', 16, 1);
+    END CATCH
 END;

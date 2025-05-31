@@ -84,6 +84,50 @@ function renderAssInfoTable(accs) {
     });
 }
 
+document.addEventListener("click", function (e) {
+    if (e.target.closest(".view-acc")) {
+        e.preventDefault();
+        const athleteId = e.target.closest(".view-acc").getAttribute("data-id");
+        showAthleteDetails(athleteId);
+    }
+
+    if (e.target.closest(".edit-acc")) {
+        e.preventDefault();
+        const athleteId = e.target.closest(".edit-acc").getAttribute("data-id");
+        openEditModal(athleteId);
+    }
+
+    if (e.target.closest(".delete-acc")) {
+        e.preventDefault();
+        const accId = e.target
+            .closest(".delete-acc")
+            .getAttribute("data-id");
+        if (confirm("Are you sure you want to delete this acc?")) {
+            deleteAcc(accId);
+        }
+    }
+});
+
+function deleteAcc(accId) {
+    fetch(`/api/associacoes/${accId}`, {
+        method: "DELETE",
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === "success") {
+                alert("Acc deleted successfully!");
+                loadAssInfo(1);
+            } else {
+                console.error("Error deleting Acc:", data.message);
+                alert("Error deleting Acc: " + data.message);
+            }
+        })
+        .catch((error) => {
+            console.error("Error deleting Acc:", error);
+            alert("Error deleting Acc: " + error);
+        });
+}
+
 function renderPagination(totalPages, currentPage) {
     const pagination = document.querySelector(".pagination");
     pagination.innerHTML = "";
