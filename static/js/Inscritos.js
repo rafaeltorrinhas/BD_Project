@@ -2,40 +2,71 @@ let allModalidades = [];
 let selectedModalidadesMap = new Map();
 
 
-document
-    .getElementById("filterForm")
-    .addEventListener("submit", function (event) {
-        event.preventDefault();
+document.getElementById("filterForm").addEventListener("submit", function (e) {
+    e.preventDefault();
 
-        const ccNumber = document.getElementById("filterCCNumber").value.trim();
-        const phoneNumber = document
-            .getElementById("filterPhoneNumber")
-            .value.trim();
-        const age = document.getElementById("filterAge").value.trim();
-        const sortBy = document.getElementById("filterSortBy").value.trim();
+    // 1️⃣ Build active filter tags
+    const formData = new FormData(this);
+    const activeFiltersContainer = document.getElementById("activeFilterTags");
 
-        const params = new URLSearchParams();
-        if (ccNumber !== "") {
-            params.append("cc_number", ccNumber);
-        }
-        if (phoneNumber !== "") {
-            params.append("phone_number", phoneNumber);
-        }
-        if (age !== "") {
-            params.append("age", age);
-        }
-        if (sortBy !== "") {
-            params.append("sort_by", sortBy);
-        }
+    activeFiltersContainer.innerHTML = "";
+    document.getElementById("activeFilters").style.display = "block";
 
-        fetch(`/api/inscritos?${params.toString()}`)
-            .then((response) => response.json())
-            .then((data) => {
-                renderAthletesTable(data.rows);
-                renderPagination(data.total_pages, data.current_page);
-            })
-            .catch((error) => console.error("Error applying filters:", error));
-    });
+    for (let [key, value] of formData.entries()) {
+        if (value && value.trim() !== "") {
+            const tag = document.createElement("div");
+            tag.className = "filter-tag";
+
+            let displayText = "";
+            switch (key) {
+                case "association":
+                    displayText = `Associação: ${document.querySelector(
+                        `#filterAssociation option[value="${value}"]`
+                    ).textContent}`;
+                    break;
+                case "min_age":
+                    displayText = `Idade Mín: ${value}`;
+                    break;
+                case "max_age":
+                    displayText = `Idade Máx: ${value}`;
+                    break;
+                case "sort_by":
+                    displayText = `Ordem: ${document.querySelector(
+                        `#filterSortBy option[value="${value}"]`
+                    ).textContent}`;
+                    break;
+                default:
+                    displayText = `${key}: ${value}`;
+            }
+
+            tag.innerHTML = `
+                <span>${displayText}</span>
+                <button onclick="removeFilter('${key}')" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            activeFiltersContainer.appendChild(tag);
+        }
+    }
+
+    console.log("Filters applied:", Object.fromEntries(formData));
+
+    // 2️⃣ Apply filters by querying the backend
+    const params = new URLSearchParams();
+    for (let [key, value] of formData.entries()) {
+        if (value && value.trim() !== "") {
+            params.append(key, value);
+        }
+    }
+
+    fetch(`/api/inscritos?${params.toString()}`)
+        .then((response) => response.json())
+        .then((data) => {
+            renderAthletesTable(data.rows);
+            renderPagination(data.total_pages, data.current_page);
+        })
+        .catch((error) => console.error("Error applying filters:", error));
+});
 
 function toggleFilters() {
     const content = document.getElementById("filterContent");
@@ -77,62 +108,6 @@ function removeFilter(filterType) {
     }
 }
 
-// Form submission handler
-document.getElementById("filterForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    // Show active filters section
-    document.getElementById("activeFilters").style.display = "block";
-
-    // Get form data and create filter tags
-    const formData = new FormData(this);
-    const activeFiltersContainer = document.getElementById("activeFilterTags");
-
-    // Clear existing tags
-    activeFiltersContainer.innerHTML = "";
-
-    // Add new filter tags based on form data
-    for (let [key, value] of formData.entries()) {
-        if (value && value.trim() !== "") {
-            const tag = document.createElement("div");
-            tag.className = "filter-tag";
-
-            let displayText = "";
-            switch (key) {
-                case "association":
-                    displayText = `Associação: ${document.querySelector(
-                        `#filterAssociation option[value="${value}"]`
-                    ).textContent
-                        }`;
-                    break;
-                case "min_age":
-                    displayText = `Idade Mín: ${value}`;
-                    break;
-                case "max_age":
-                    displayText = `Idade Máx: ${value}`;
-                    break;
-                case "sort_by":
-                    displayText = `Ordem: ${document.querySelector(`#filterSortBy option[value="${value}"]`)
-                        .textContent
-                        }`;
-                    break;
-                default:
-                    displayText = `${key}: ${value}`;
-            }
-
-            tag.innerHTML = `
-                        <span>${displayText}</span>
-                        <button onclick="removeFilter('${key}')" type="button">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-
-            activeFiltersContainer.appendChild(tag);
-        }
-    }
-
-    console.log("Filters applied:", Object.fromEntries(formData));
-});
 
 function navigateToPage(pageUrl) {
     if (pageUrl) {

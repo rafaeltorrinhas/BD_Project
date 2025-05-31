@@ -255,3 +255,98 @@ function handleAddAssociation(event) {
 
     return false; // just in case it's called from inline onsubmit
 }
+
+// filter informaciotn
+
+
+document.getElementById("filterForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const formData = new FormData(this);
+    const activeFiltersContainer = document.getElementById("activeFilterTags");
+
+    activeFiltersContainer.innerHTML = "";
+    document.getElementById("activeFilters").style.display = "block";
+
+    for (let [key, value] of formData.entries()) {
+        if (value && value.trim() !== "") {
+            const tag = document.createElement("div");
+            tag.className = "filter-tag";
+
+            let displayText = "";
+            switch (key) {
+                case "sort_by":
+                    displayText = `Ordem: ${document.querySelector(
+                        `#filterSortBy option[value="${value}"]`
+                    ).textContent}`;
+                    break;
+                default:
+                    displayText = `${key}: ${value}`;
+            }
+
+            tag.innerHTML = `
+                <span>${displayText}</span>
+                <button onclick="removeFilter('${key}')" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            activeFiltersContainer.appendChild(tag);
+        }
+    }
+
+    console.log("Filters applied:", Object.fromEntries(formData));
+
+    const params = new URLSearchParams();
+    for (let [key, value] of formData.entries()) {
+        if (value && value.trim() !== "") {
+            params.append(key, value);
+        }
+    }
+
+    fetch(`/api/AssInfo?${params.toString()}`)
+        .then((response) => response.json())
+        .then((data) => {
+            renderAssInfoTable(data.rows);
+            renderPagination(data.total_pages, data.current_page);
+        })
+        .catch((error) => console.error("Error applying filters:", error));
+});
+
+function toggleFilters() {
+    const content = document.getElementById("filterContent");
+    const toggle = document.getElementById("filterToggle");
+
+    content.classList.toggle("active");
+    toggle.classList.toggle("active");
+}
+function clearFilters() {
+    // Clear all form inputs
+    document.getElementById("filterForm").reset();
+
+    // Hide active filters
+    document.getElementById("activeFilters").style.display = "none";
+
+    // Clear active filter tags
+    document.getElementById("activeFilterTags").innerHTML = "";
+
+    console.log("Filters cleared");
+}
+
+function removeFilter(filterType) {
+    // Remove specific filter
+    console.log("Removing filter:", filterType);
+
+    // Find and remove the filter tag
+    const filterTags = document.querySelectorAll(".filter-tag");
+    filterTags.forEach((tag) => {
+        if (tag.textContent.toLowerCase().includes(filterType)) {
+            tag.remove();
+        }
+    });
+
+    // Hide active filters section if no tags remain
+    const remainingTags = document.querySelectorAll(".filter-tag");
+    if (remainingTags.length === 0) {
+        document.getElementById("activeFilters").style.display = "none";
+    }
+}

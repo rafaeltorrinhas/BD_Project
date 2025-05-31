@@ -82,8 +82,12 @@
         </div>
       </div>
     </nav>
+    
     <div class="container">
       <div class="main-container fade-in">
+
+
+        
 
         <div class="page-header">
           <h1 class="page-title">
@@ -95,6 +99,79 @@
             Gerir informações dos Associações 
           </div>
         </div>
+        <div class="filter-section" id="filterSection">
+          <div class="filter-header" onclick="toggleFilters()">
+            <h3 class="filter-title">
+              <i class="fas fa-filter"></i>
+              Filtros Avançados
+            </h3>
+            <button class="filter-toggle" id="filterToggle">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="filter-content" id="filterContent">
+            <!-- Active Filters Display -->
+            <div
+              class="active-filters"
+              id="activeFilters"
+              style="display: none"
+            >
+              <strong><i class="fas fa-tags mr-2"></i>Filtros Ativos:</strong>
+              <div class="active-filter-tags" id="activeFilterTags"></div>
+            </div>
+
+            <!-- Filter Form -->
+            <form id="filterForm">
+              <div class="filter-row">
+                 
+
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-sort"></i>
+                    Ordenar Por
+                  </label>
+                  <select
+                    id="filterSortBy"
+                    name="sort_by"
+                    class="filter-select"
+                  >
+                    <option value="">Ordem Padrão</option>
+                    <option value="name_asc">Nome (A-Z)</option>
+                    <option value="name_desc">Nome (Z-A)</option>
+                    <option value="sigla_asc">Sigla (Crescente)</option>
+                    <option value="sigla_desc">Sigla (Decrescente)</option>
+                    <option value="association_asc">Associação (A-Z)</option>
+                    <option value="association_desc">Associação (Z-A)</option>
+                    <option value="ouro_asc">Ouro (Crescente)</option>
+                    <option value="ouro_desc">Ouro (Decrescente)</option>
+                    <option value="prata_asc">Prata (Crescente)</option>
+                    <option value="prata_desc">Prata (Decrescente)</option>
+                    <option value="bronze_asc">Bronze (Crescente)</option>
+                    <option value="bronze_desc">Bronze (Decrescente)</option>
+
+                  </select>
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button
+                  type="button"
+                  class="btn-filter btn-clear-filter"
+                  onclick="clearFilters()"
+                >
+                  <i class="fas fa-times"></i>
+                  Limpar Filtros
+                </button>
+                <button type="submit" class="btn-filter btn-apply-filter">
+                  <i class="fas fa-search"></i>
+                  Aplicar Filtros
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        
                 <!-- Controls Section -->
         <div class="controls-section">
           <div class="search-container">
