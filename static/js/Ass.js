@@ -85,16 +85,18 @@ function renderAssInfoTable(accs) {
 }
 
 document.addEventListener("click", function (e) {
-    if (e.target.closest(".view-acc")) {
-        e.preventDefault();
-        const athleteId = e.target.closest(".view-acc").getAttribute("data-id");
-        showAthleteDetails(athleteId);
-    }
+
 
     if (e.target.closest(".edit-acc")) {
         e.preventDefault();
-        const athleteId = e.target.closest(".edit-acc").getAttribute("data-id");
-        openEditModal(athleteId);
+
+        //const accId = e.target.closest(".edit-acc").getAttribute("data-id");
+        //window.location.href = `/Ass/${accId}`;
+    }
+    if (e.target.closest(".view-acc")) {
+        e.preventDefault();
+        const accId = e.target.closest(".view-acc").getAttribute("data-id");
+        window.location.href = `/Ass/${accId}`;
     }
 
     if (e.target.closest(".delete-acc")) {
