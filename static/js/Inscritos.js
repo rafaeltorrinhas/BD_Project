@@ -159,9 +159,12 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("searchInput").addEventListener("input", function () {
         const searchTerm = this.value.trim();
         if (searchTerm.length > 2) {
-            fetch(`/api/search_athletes?search=${encodeURIComponent(searchTerm)}`)
+            fetch(`/api/search_athletes?search=${encodeURIComponent(searchTerm)}&page=1`)
                 .then((response) => response.json())
-                .then((data) => renderAthletesTable(data[0].rows))
+                .then((data) => {
+                    renderAthletesTable(data.rows);
+                    renderPagination(data.total_pages, data.current_page);
+                })
                 .catch((error) => console.error("Error fetching data:", error));
         } else {
             if (cachedAthletes) {
@@ -233,6 +236,7 @@ function loadAthletes(page) {
         .then((data) => {
             renderAthletesTable(data.rows);
             renderPagination(data.total_pages, data.current_page);
+            return data;
         })
         .catch((error) => console.error("Error fetching athletes:", error));
 }

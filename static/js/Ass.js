@@ -1,7 +1,39 @@
+let cachedAss = null;
+
 document.addEventListener("DOMContentLoaded", function () {
     loadAssInfo(1).then((data) => {
         cachedAss = data;
     });
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+        const searchTerm = this.value.trim();
+        if (searchTerm.length > 2) {
+            fetch(`/api/search_associacoes?search=${encodeURIComponent(searchTerm)}&page=1`)
+                .then((response) => response.json())
+                .then((data) => {
+                    renderAssInfoTable(data.rows);
+                    renderPagination(data.total_pages, data.current_page);
+                })
+                .catch((error) => console.error("Error fetching data:", error));
+        } else {
+            if (cachedAss) {
+                renderAssInfoTable(cachedAss.rows);
+                renderPagination(
+                    cachedAss.total_pages,
+                    cachedAss.current_page
+                );
+            } else {
+                loadAssInfo(1).then((data) => {
+                    cachedAss = data;
+                });
+            }
+        }
+    });
+    document
+        .getElementById("openModalBtn")
+        .addEventListener("click", function () {
+            $("#addAssModal").modal("show");
+        });
 
 
 })
@@ -11,6 +43,7 @@ function loadAssInfo(page) {
         .then((data) => {
             renderAssInfoTable(data.rows);
             renderPagination(data.total_pages, data.current_page);
+            return data;
         })
         .catch((error) => console.error("Error fetching acc info:", error));
 }
@@ -35,13 +68,13 @@ function renderAssInfoTable(accs) {
         <td>${acc[5]}</td>
         <td>${acc[6]}</td>
         <td>
-            <a href="#" class="edit-athlete" data-id="${acc[0]}" title="Edit">
+            <a href="#" class="edit-acc" data-id="${acc[0]}" title="Edit">
                 <i class="fas fa-edit"></i>
             </a>
-            <a href="#" class="delete-athlete" data-id="${acc[0]}" title="Delete">
+            <a href="#" class="delete-acc" data-id="${acc[0]}" title="Delete">
                 <i class="fas fa-trash-alt"></i>
             </a>
-            <a href="#" class="view-athlete" data-id="${acc[0]}" title="View Info">
+            <a href="#" class="view-acc" data-id="${acc[0]}" title="View Info">
                 <i class="fas fa-info-circle"></i>
             </a>
         </td>
@@ -92,4 +125,87 @@ function renderPagination(totalPages, currentPage) {
         pagination.appendChild(createPageItem(">", currentPage + 1));
         pagination.appendChild(createPageItem(">>", totalPages));
     }
+}
+
+$("#openModalBtn").click(function () {
+    loadUniversities("universityId").then(() => {
+        $("#addAssModal").modal("show");
+    });
+});
+
+function loadUniversities(selectElementId, selectedId = null, assId = 'NULL') {
+
+
+    return fetch(`/api/universityAss/${assId}`)
+        .then((response) => response.json())
+        .then((data) => {
+            const select = document.getElementById(selectElementId);
+            if (!select) {
+                console.error(`Select element with ID '${selectElementId}' not found!`);
+                return;
+            }
+            if (!data.rows || data.rows.length === 0) {
+
+
+                const warning = document.createElement("div");
+                warning.classList.add("alert", "alert-warning", "mt-2");
+                warning.textContent = "⚠️ Todas as universidades já têm uma associação atribuída. Adicione uma nova universidade primeiro.";
+                select.parentNode.insertBefore(warning, select.nextSibling);
+                select.parentNode.removeChild(select);
+
+                return;
+            }
+            select.innerHTML = "";
+            console.log("Associations data:", data);
+            data.rows.forEach((uni) => {
+
+                const option = document.createElement("option");
+                option.value = uni[0]; // University addrss
+                option.textContent = uni[1]; //  University name
+                if (selectedId && uni[0] === selectedId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        })
+        .catch((error) => console.error("Error fetching associations:", error));
+}
+function handleAddAssociation(event) {
+    event.preventDefault(); // prevent the default form submission
+
+    const assName = document.getElementById("assName").value.trim();
+    const assSigla = document.getElementById("assSigla").value.trim();
+    const universityAddres = document.getElementById("universityId").value;
+
+    if (!assName || !assSigla || !universityAddres) {
+        alert("Por favor, preencha todos os campos antes de adicionar uma associação.");
+        return false;
+    }
+
+    const payload = new URLSearchParams({
+        assName: assName,
+        assSigla: assSigla,
+        universityAddres: universityAddres
+    });
+
+    console.log("Processing add association request...");
+
+    fetch("/api/associacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: payload.toString(),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === "success") {
+                $("#addAssModal").modal("hide");
+                history.replaceState({}, document.title, window.location.pathname);
+                loadAssInfo(1); // reload the association table (or whatever function you use)
+            } else {
+                console.error("Server error:", data.message);
+            }
+        })
+        .catch((error) => console.error("Error adding association:", error));
+
+    return false; // just in case it's called from inline onsubmit
 }

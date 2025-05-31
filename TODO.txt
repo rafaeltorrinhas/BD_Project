@@ -11,6 +11,7 @@ TODO:
         - adicioanr vitiorias na ass mod por TRIGGERS
         - adcionar o show data to players # done
         - adcioanr a possibilidade de EDITAR # done 
+        -- filtros nao esta a passar de pagina
 
     - FAZER FILTROS
     

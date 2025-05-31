@@ -137,3 +137,43 @@ BEGIN
 END;
 go
 
+
+
+CREATE PROCEDURE dbo.addAss
+    @assName VARCHAR(64),
+    @assSigla VARCHAR(100),
+    @universityAddress VARCHAR(100)
+    @NewAccId INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ToReturn INT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Insert into FADU_PERSON
+        INSERT INTO dbo.FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla, Org_Id)
+        VALUES (@assName, @assSigla,NULL);
+
+        -- Fetch the new Person ID
+        SELECT @ToReturn = Id
+        FROM dbo.FADU_ASSOCIAÇAO_ACADEMICA
+        WHERE Sigla = @assSigla;
+
+        UPDATE FADU_UNIVERSIDADE
+        set Ass_id = @ToReturn
+        WHERE Address = @universityAddress
+
+        SET @NewAccId = @ToReturn;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
+END;

@@ -460,39 +460,174 @@ def inscritos_page():
     return render_template('inscritos.html')
 
 
+
+@app.route('/api/universityAss/<assId>', methods=['GET'])
+def get_uni_accId(assId):
+    if assId == 'NULL':
+        query = '''SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL'''
+        uni_cols, uni_data = getInfo(query)
+    else :
+        query = ''' SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id = ?'''
+        uni_cols, uni_data = getInfo(query, assId)
+    
+    return jsonify({'columns': uni_cols, 'rows': uni_data})
+    
+
+    
+
+
 @app.route('/api/search_athletes', methods=['GET'])
 def search_athletes():
     search = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
     per_page = 15
+    offset = (page - 1) * per_page
 
     if len(search) < 2:
         return jsonify([])
 
+    # Main query with pagination
     query = '''
-    SELECT
-        person.Id AS Person_Id,
-        person.Name AS Athlete_Name
-    FROM
-        FADU_ATLETA atle
-    JOIN
-        FADU_PERSON person ON person.Id = atle.Person_Id
-    WHERE
-        person.Name LIKE ?
-    ORDER BY
-        person.Id
+        SELECT
+            person.Id AS Person_Id,
+            person.Name AS Athlete_Name
+        FROM
+            FADU_ATLETA atle
+        JOIN
+            FADU_PERSON person ON person.Id = atle.Person_Id
+        WHERE
+            person.Name LIKE ?
+        ORDER BY
+            person.Id
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
     '''
-    athletes_cols, athletes_data = getInfo(query, [f'%{search}%'])
+    params = [f'%{search}%', offset, per_page]
+    athletes_cols, athletes_data = getInfo(query, params)
 
     results = [[row[0], row[1]] for row in athletes_data]
-    response = [{'columns': athletes_cols, 'rows': results}]
+
+    # Count query for pagination
+    count_query = '''
+        SELECT COUNT(*)
+        FROM
+            FADU_ATLETA atle
+        JOIN
+            FADU_PERSON person ON person.Id = atle.Person_Id
+        WHERE
+            person.Name LIKE ?
+    '''
+    count_cols, count_data = getInfo(count_query, [f'%{search}%'])
+    total_athletes = count_data[0][0] if count_data else 0
+    total_pages = math.ceil(total_athletes / per_page)
+
+    response = {
+        'columns': athletes_cols,
+        'rows': results,
+        'total_athletes': total_athletes,
+        'total_pages': total_pages,
+        'current_page': page
+    }
     return jsonify(response)
 
 
-@app.route('/api/associacoes', methods=['GET'])
+
+
+
+
+
+
+@app.route('/api/associacoes', methods=['GET', 'POST'])
 def api_get_associacoes():
-    associations_query = "SELECT Id, Name FROM FADU_ASSOCIAÇAO_ACADEMICA"
-    associations_cols, associations_data = getInfo(associations_query)
-    return jsonify({'columns': associations_cols, 'rows': associations_data})
+    if( request.method == 'POST'):
+        name = request.form.get('assName', '').strip()
+        sigla = request.form.get('assSigla', '').strip()
+        universityAddres = request.form.get('universityAddres', '').strip()
+        callUserProcessure = '''
+        DECLARE @NewAccId INT;
+        EXEC dbo.addAss ?, ?, ?, @NewAccId OUTPUT;
+        SELECT @NewAccId;
+        '''
+        callUserPro(callUserProcessure, [
+                    name, sigla, universityAddres])
+        return jsonify({'status': 'success'})
+        
+
+    else:
+        associations_query = "SELECT Id, Name FROM FADU_ASSOCIAÇAO_ACADEMICA"
+        associations_cols, associations_data = getInfo(associations_query)
+        return jsonify({'columns': associations_cols, 'rows': associations_data})
+
+
+
+
+@app.route('/api/search_associacoes', methods=['GET'])
+def search_ass():
+    search = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+    offset = (page - 1) * per_page
+
+    if len(search) < 2:
+        return jsonify([])
+
+    # Main query with pagination
+    query = '''
+        SELECT
+            ass.Id AS Id,
+            ass.Name AS Nome,
+            ass.Sigla AS Sigla,
+            STRING_AGG(mod.Name, ', ') AS Modalidades,
+            SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS Ouro,
+            SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
+            SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
+        FROM
+            FADU_ASSOCIAÇAO_ACADEMICA ass
+        LEFT JOIN
+            FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
+        LEFT JOIN
+            FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
+        LEFT JOIN
+            FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
+        LEFT JOIN
+            FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
+        WHERE
+            ass.Name LIKE ?
+        GROUP BY
+            ass.Id, ass.Name, ass.Sigla
+        ORDER BY
+            ass.Id
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
+    '''
+    params = [f'%{search}%', offset, per_page]
+    acc_cols, acc_data = getInfo(query, params)
+    results = [
+        [row[0], row[1], row[2], row[3], row[4], row[5], row[6]]
+        for row in acc_data
+    ]
+
+    # Count query for pagination
+    count_query = '''
+        SELECT COUNT(*)
+        FROM
+            FADU_ASSOCIAÇAO_ACADEMICA ass
+        WHERE
+            ass.Name LIKE ?
+    '''
+    count_cols, count_data = getInfo(count_query, [f'%{search}%'])
+    total_ass = count_data[0][0] if count_data else 0
+    total_pages = math.ceil(total_ass / per_page)
+
+    response = {
+        'columns': acc_cols,
+        'rows': results,
+        'total_ass': total_ass,
+        'total_pages': total_pages,
+        'current_page': page
+    }
+    return jsonify(response)
+
 
 
 @app.route('/api/modalidades', methods=['GET'])
