@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 import pyodbc
 import math
+import json
 
 
 load_dotenv()
@@ -115,7 +116,7 @@ def get_uni():
             ass.Sigla AS SiglaAssociação
             FROM
             FADU_UNIVERSIDADE uni
-            JOIN
+            LEFT JOIN
             FADU_ASSOCIAÇAO_ACADEMICA ass
             ON uni.Ass_Id = ass.Id
             '''
@@ -475,20 +476,17 @@ def inscritos_page():
     return render_template('inscritos.html')
 
 
-
 @app.route('/api/universityAss/<assId>', methods=['GET'])
 def get_uni_accId(assId):
-    if assId == 'NULL':
-        query = '''SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL'''
-        uni_cols, uni_data = getInfo(query)
-    else :
-        query = ''' SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id = ?'''
-        uni_cols, uni_data = getInfo(query, assId)
-    
+    query = '''SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL OR Ass_id = ?'''
+    uni_cols, uni_data = getInfo(query, assId)
     return jsonify({'columns': uni_cols, 'rows': uni_data})
     
-
-    
+@app.route('/api/uniNullAss', methods=['GET'])
+def get_uni_null_ass():
+    query = '''SELECT Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL'''
+    uni_cols, uni_data = getInfo(query)
+    return jsonify({'columns': uni_cols, 'rows': uni_data})
 
 
 @app.route('/api/search_athletes', methods=['GET'])
@@ -554,20 +552,37 @@ def search_athletes():
 
 @app.route('/api/associacoes', methods=['GET', 'POST'])
 def api_get_associacoes():
-    if( request.method == 'POST'):
-        name = request.form.get('assName', '').strip()
-        sigla = request.form.get('assSigla', '').strip()
-        universityAddres = request.form.get('universityAddres', '').strip()
-        callUserProcessure = '''
-        DECLARE @NewAccId INT;
-        EXEC dbo.addAss ?, ?, ?, @NewAccId OUTPUT;
-        SELECT @NewAccId;
-        '''
-        callUserPro(callUserProcessure, [
-                    name, sigla, universityAddres])
-        return jsonify({'status': 'success'})
-        
-
+    if request.method == 'POST':
+        try:
+            name = request.form.get('assName', '').strip()
+            sigla = request.form.get('assSigla', '').strip()
+            universities = json.loads(request.form.get('universities', '[]'))
+            print("Received universities:", universities)  # Debug log
+            if not universities:
+                return jsonify({'status': 'error', 'message': 'No universities selected'})
+            # Directly insert the new association
+            cnxn = get_connection()
+            cursor = cnxn.cursor()
+            cursor.execute("INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
+            cnxn.commit()
+            cursor.execute('SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
+            row = cursor.fetchone()
+            new_ass_id = row[0] if row else None
+            cursor.close()
+            cnxn.close()
+            # Assign the new association to all selected universities by name
+            if new_ass_id:
+                for university_name in universities:
+                    cnxn = get_connection()
+                    cursor = cnxn.cursor()
+                    cursor.execute('UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
+                    cnxn.commit()
+                    cursor.close()
+                    cnxn.close()
+            return jsonify({'status': 'success'})
+        except Exception as e:
+            print("Error in /api/associacoes POST:", e)
+            return jsonify({'status': 'error', 'message': str(e)}), 500
     else:
         associations_query = "SELECT Id, Name FROM FADU_ASSOCIAÇAO_ACADEMICA"
         associations_cols, associations_data = getInfo(associations_query)
@@ -588,7 +603,7 @@ def api_delete_ass(ass):
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/api/associacoes/<ass>', methods=['PUT'])
-def api_update_acc(ass):
+def api_update_ass(ass):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
@@ -596,12 +611,28 @@ def api_update_acc(ass):
         # Get the updated data from the request
         assName = request.form.get('assName')
         assSigla = request.form.get('assSigla')
+        universities = json.loads(request.form.get('universities', '[]'))
         
         # Update the association
         cursor.execute(
             "UPDATE FADU_ASSOCIAÇAO_ACADEMICA SET Name = ?, Sigla = ? WHERE Id = ?",
             (assName, assSigla, ass)
         )
+
+        # Update the university associations
+        if universities:
+            # First, remove the association from any university that currently has it
+            cursor.execute(
+                "UPDATE FADU_UNIVERSIDADE SET Ass_Id = NULL WHERE Ass_Id = ?",
+                (ass,)
+            )
+            # Then, set the new universities' associations
+            for university_id in universities:
+                cursor.execute(
+                    "UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Id = ?",
+                    (ass, int(university_id))
+                )
+
         cnxn.commit()
         cursor.close()
         cnxn.close()
@@ -935,7 +966,7 @@ def api_add_athlete():
                 "type_asc": "InscritoType ASC",
                 "type_desc": "InscritoType DESC"
             }
-            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'Person_Id')}"
+            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'p.Id')}"
 
         # Base query
         query = '''

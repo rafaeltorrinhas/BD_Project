@@ -345,15 +345,14 @@
               </div>
               <div class="form-group">
                 <label for="universityId">
-                  <i class="fas fa-university mr-1"></i>Universidade:
+                  <i class="fas fa-university mr-1"></i>Universidades:
                 </label>
                 <select
                   id="universityId"
                   name="universityId"
-                  class="form-control"
-                  required
+                  class="form-control select2-multiple"
+                  multiple="multiple"
                 >
-                  <option value="">Selecionar Universidade</option>
                   <!-- Options will be loaded dynamically by JavaScript -->
                 </select>
               </div>
@@ -422,6 +421,18 @@
                   class="form-control"
                   required
                 />
+              </div>
+              <div class="form-group">
+                <label for="editAssUniversity">
+                  <i class="fas fa-university mr-1"></i>Universidades:
+                </label>
+                <select
+                  id="editAssUniversity"
+                  class="form-control select2-multiple"
+                  multiple="multiple"
+                >
+                  <!-- Options will be loaded dynamically by JavaScript -->
+                </select>
               </div>
               <div class="form-group">
                 <label for="editAssModalidades">

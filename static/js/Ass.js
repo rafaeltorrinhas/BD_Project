@@ -196,15 +196,26 @@ function renderPagination(totalPages, currentPage) {
     }
 }
 
+function waitForSelectAndLoadUniversities(selectId, callback) {
+    const interval = setInterval(() => {
+        if (document.getElementById(selectId)) {
+            clearInterval(interval);
+            callback();
+        }
+    }, 50);
+}
+
 $("#openModalBtn").click(function () {
-    loadUniversities("universityId").then(() => {
-        $("#addAssModal").modal("show");
+    $("#addAssModal").modal("show");
+    $('#addAssModal').off('shown.bs.modal');
+    $('#addAssModal').on('shown.bs.modal', function () {
+        waitForSelectAndLoadUniversities("universityId", function() {
+            loadUniversitiesNullAss("universityId");
+        });
     });
 });
 
 function loadUniversities(selectElementId, selectedId = null, assId = 'NULL') {
-
-
     return fetch(`/api/universityAss/${assId}`)
         .then((response) => response.json())
         .then((data) => {
@@ -214,20 +225,11 @@ function loadUniversities(selectElementId, selectedId = null, assId = 'NULL') {
                 return;
             }
             if (!data.rows || data.rows.length === 0) {
-
-
-                const warning = document.createElement("div");
-                warning.classList.add("alert", "alert-warning", "mt-2");
-                warning.textContent = "⚠️ Todas as universidades já têm uma associação atribuída. Adicione uma nova universidade primeiro.";
-                select.parentNode.insertBefore(warning, select.nextSibling);
-                select.parentNode.removeChild(select);
-
                 return;
             }
             select.innerHTML = "";
             console.log("Associations data:", data);
             data.rows.forEach((uni) => {
-
                 const option = document.createElement("option");
                 option.value = uni[0]; // University addrss
                 option.textContent = uni[1]; //  University name
@@ -239,25 +241,58 @@ function loadUniversities(selectElementId, selectedId = null, assId = 'NULL') {
         })
         .catch((error) => console.error("Error fetching associations:", error));
 }
+
+function loadUniversitiesNullAss(selectElementId) {
+    return fetch('/api/uniNullAss')
+        .then((response) => response.json())
+        .then((data) => {
+            console.log("Universities loaded:", data.rows); // Debug log
+            const select = document.getElementById(selectElementId);
+            if (!select) {
+                console.error(`Select element with ID '${selectElementId}' not found!`);
+                return;
+            }
+            if (!data.rows || data.rows.length === 0) {
+                const warning = document.createElement("div");
+                warning.className = "alert alert-warning";
+                warning.textContent = "Não há universidades disponíveis";
+                select.parentNode.insertBefore(warning, select.nextSibling);
+                select.parentNode.removeChild(select);
+                return;
+            }
+            select.innerHTML = "";
+            data.rows.forEach((uni) => {
+                const option = document.createElement("option");
+                option.value = uni[0]; // University name
+                option.textContent = uni[0]; // University name
+                select.appendChild(option);
+            });
+            // Trigger change event to update Select2
+            $(`#${selectElementId}`).trigger('change');
+        })
+        .catch((error) => console.error("Error fetching universities:", error));
+}
+
 function handleAddAssociation(event) {
     event.preventDefault(); // prevent the default form submission
 
     const assName = document.getElementById("assName").value.trim();
     const assSigla = document.getElementById("assSigla").value.trim();
-    const universityAddres = document.getElementById("universityId").value;
+    const selectedUniversities = $('#universityId').val() || [];
 
-    if (!assName || !assSigla || !universityAddres) {
-        alert("Por favor, preencha todos os campos antes de adicionar uma associação.");
-        return false;
-    }
-
+    // Debug logs
+    console.log("Selected universities:", selectedUniversities);
     const payload = new URLSearchParams({
         assName: assName,
         assSigla: assSigla,
-        universityAddres: universityAddres
+        universities: JSON.stringify(selectedUniversities)
     });
+    console.log("Payload:", payload.toString());
 
-    console.log("Processing add association request...");
+    if (!assName || !assSigla || selectedUniversities.length === 0) {
+        alert("Por favor, preencha todos os campos antes de adicionar uma associação.");
+        return false;
+    }
 
     fetch("/api/associacoes", {
         method: "POST",
@@ -279,7 +314,7 @@ function handleAddAssociation(event) {
     return false; // just in case it's called from inline onsubmit
 }
 
-// filter informaciotn
+
 
 
 document.getElementById("filterForm").addEventListener("submit", function (event) {
@@ -399,52 +434,56 @@ function removeFilter(key, value = null) {
 
 function openEditModal(id) {
     const ass = cachedAss.rows.find((a) => a[0] === parseInt(id));
+
     if (ass) {
         document.getElementById("editAssId").value = ass[0];
         document.getElementById("editAssName").value = ass[1];
         document.getElementById("editAssSigla").value = ass[2];
 
-        // Initialize Select2 for modalidades if not already initialized
-        if (!$('#editAssModalidades').hasClass("select2-hidden-accessible")) {
-            $('#editAssModalidades').select2({
-                placeholder: "Selecione uma ou mais modalidades",
+        // Initialize Select2 for universities if not already initialized
+        if (!$('#editAssUniversity').hasClass("select2-hidden-accessible")) {
+            $('#editAssUniversity').select2({
+                placeholder: "Selecione uma ou mais universidades",
                 allowClear: true,
                 width: '100%',
                 language: {
                     noResults: function() {
-                        return "Nenhuma modalidade encontrada";
+                        return "Nenhuma universidade encontrada";
                     }
                 }
             });
         }
 
-        // First fetch all available modalidades
-        fetch('/api/modalidades')
-            .then(response => response.json())
-            .then(data => {
-                const select = document.getElementById('editAssModalidades');
-                select.innerHTML = ''; // Clear existing options
-                
-                // Add all modalidades as options
-                data.rows.forEach(mod => {
-                    const option = document.createElement('option');
-                    option.value = mod[1]; // Use modalidade name as value
-                    option.textContent = mod[1];
-                    select.appendChild(option);
-                });
-
-                // Then fetch and set the current association's modalidades
-                return fetch(`/api/ass/${id}/modalidades`);
-            })
-            .then(response => response.json())
-            .then(modalidadesData => {
-                // Set the selected modalidades
-                const selectedModalidades = modalidadesData.rows.map(row => row[1]);
-                $('#editAssModalidades').val(selectedModalidades).trigger('change');
-            })
-            .catch(error => {
-                console.error('Error loading modalidades:', error);
+        // Load universities for the edit modal
+        loadUniversities("editAssUniversity", null, id).then(() => {
+            // First fetch all available modalidades
+            return fetch('/api/modalidades');
+        })
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('editAssModalidades');
+            select.innerHTML = ''; // Clear existing options
+            
+            // Add all modalidades as options
+            data.rows.forEach(mod => {
+                const option = document.createElement('option');
+                option.value = mod[1]; // Use modalidade name as value
+                option.textContent = mod[1];
+                select.appendChild(option);
             });
+
+            // Then fetch and set the current association's modalidades
+            return fetch(`/api/ass/${id}/modalidades`);
+        })
+        .then(response => response.json())
+        .then(modalidadesData => {
+            // Set the selected modalidades
+            const selectedModalidades = modalidadesData.rows.map(row => row[1]);
+            $('#editAssModalidades').val(selectedModalidades).trigger('change');
+        })
+        .catch(error => {
+            console.error('Error loading modalidades:', error);
+        });
 
         $("#editAssModal").modal("show");
     }
@@ -456,6 +495,7 @@ async function handleEditAssociation(event) {
     const id = document.getElementById("editAssId").value;
     const name = document.getElementById("editAssName").value;
     const sigla = document.getElementById("editAssSigla").value;
+    const selectedUniversities = $('#editAssUniversity').val() || [];
     const selectedModalidades = $('#editAssModalidades').val() || [];
 
     try {
@@ -463,6 +503,7 @@ async function handleEditAssociation(event) {
         const formData = new FormData();
         formData.append('assName', name);
         formData.append('assSigla', sigla);
+        formData.append('universities', JSON.stringify(selectedUniversities));
 
         const response = await fetch(`/api/associacoes/${id}`, {
             method: "PUT",

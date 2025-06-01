@@ -28,7 +28,9 @@ IDEIAS:
 
 1 de junho:
 
-    - Ao criar inscrito meter o tipo de inscrito (para ver se tem ou não modalidades)
+    - Ao criar inscrito meter o tipo de inscrito (atleta, treinador, etc) (para ver se tem ou não modalidades)
+    - Fazer a verificaçáo das modalidades das associações nos atletas
+    - Se for treinador ou árbitro mudar o edit para ser compatível com o tipo de inscrito
     - Nos inscritos meter filtro por modalidades
     - Dar fix ao deleteMedals nos detalhes das associações
     - Na página dos jogos fazer uma parte de cima igual às outras páginas
@@ -36,5 +38,5 @@ IDEIAS:
     - Fazer filtros na universidade e meter os botões a funcionar (adicionar, apagar)
     - Dar fix ao nome das tabelas
     - Melhorar as views usadas nas páginas
-    - deve faltar mais mas não me lembro de mais nada 
     - No fim de tudo, remover as funções inúteis e melhorar o código (opcional)
+    - deve faltar mais mas não me lembro de mais nada 

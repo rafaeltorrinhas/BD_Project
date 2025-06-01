@@ -418,29 +418,29 @@ function renderPagination(totalPages, currentPage) {
     }
 }
 
-function loadAssociations(selectElementId, selectedId = null) {
+function loadAssociations(selectElementId = null, selectedId = null) {
     return fetch("/api/associacoes")
         .then((response) => response.json())
         .then((data) => {
-            const select = document.getElementById(selectElementId);
-            if (!select) {
-                console.error(`Select element with ID '${selectElementId}' not found!`);
-                return;
-            }
-
-            select.innerHTML = "";
-
-            data.rows.forEach((association) => {
-                const option = document.createElement("option");
-                option.value = association[0]; // association ID
-                option.textContent = association[1]; // association name
-                if (selectedId && association[0] === selectedId) {
-                    option.selected = true;
+            // If selectElementId is provided, populate that select element
+            if (selectElementId) {
+                const select = document.getElementById(selectElementId);
+                if (select) {
+                    select.innerHTML = '<option value="">Selecionar Associação</option>';
+                    data.rows.forEach((row) => {
+                        const option = document.createElement("option");
+                        option.value = row[0];
+                        option.textContent = row[1];
+                        if (selectedId && row[0] === selectedId) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
                 }
-                select.appendChild(option);
-            });
+            }
+            return data;
         })
-        .catch((error) => console.error("Error fetching associations:", error));
+        .catch((error) => console.error("Error loading associations:", error));
 }
 
 
