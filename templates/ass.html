@@ -47,6 +47,70 @@
         padding: 0.3rem 0.6rem;
         cursor: pointer;
       }
+      /* Add Select2 custom styling to match filter-select */
+      .select2-container--default .select2-selection--multiple {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        min-height: 38px;
+        background-color: #fff;
+        font-size: 14px;
+        color: #495057;
+        padding: 0.375rem 0.75rem;
+      }
+      .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        padding: 0;
+        margin: 0;
+      }
+      .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        color: #495057;
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin: 2px;
+        font-size: 14px;
+      }
+      .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #6c757d;
+        margin-right: 5px;
+        border-right: 1px solid #ced4da;
+        padding-right: 5px;
+      }
+      .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #495057;
+        background: none;
+      }
+      .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #f8f9fa;
+        color: #495057;
+      }
+      .select2-dropdown {
+        border: 1px solid #ced4da;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 0.375rem 0.75rem;
+      }
+      .select2-container--default .select2-results__option {
+        padding: 0.375rem 0.75rem;
+        font-size: 14px;
+        color: #495057;
+      }
+      .select2-container {
+        width: 100% !important;
+      }
+      .select2-container .select2-selection--multiple {
+        height: auto !important;
+      }
+      .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #ced4da;
+        box-shadow: none;
+      }
+      .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+        color: #6c757d;
+      }
     </style>
           <link
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -56,7 +120,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -96,7 +160,7 @@
           </h1>
           <div class="text-muted">
             <i class="fas fa-info-circle"></i>
-            Gerir informações dos Associações 
+            Gerir informações das Associações 
           </div>
         </div>
         <div class="filter-section" id="filterSection">
@@ -141,8 +205,6 @@
                     <option value="name_desc">Nome (Z-A)</option>
                     <option value="sigla_asc">Sigla (Crescente)</option>
                     <option value="sigla_desc">Sigla (Decrescente)</option>
-                    <option value="association_asc">Associação (A-Z)</option>
-                    <option value="association_desc">Associação (Z-A)</option>
                     <option value="ouro_asc">Ouro (Crescente)</option>
                     <option value="ouro_desc">Ouro (Decrescente)</option>
                     <option value="prata_asc">Prata (Crescente)</option>
@@ -150,6 +212,18 @@
                     <option value="bronze_asc">Bronze (Crescente)</option>
                     <option value="bronze_desc">Bronze (Decrescente)</option>
 
+                  </select>
+                </div>
+              </div>
+
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-futbol"></i>
+                    Modalidade
+                  </label>
+                  <select id="filterModalidade" name="modalidade" class="filter-select select2-multiple" multiple="multiple">
+                    <!-- Modalidades will be loaded here by JS -->
                   </select>
                 </div>
               </div>
@@ -195,12 +269,12 @@
               <thead>
                 <tr>
                   <th><i class="fas fa-hashtag mr-2"></i>ID</th>
-                  <th><i class="fas fa-user mr-2"></i>Nome</th>
-                  <th><i class="fas fa-cogs mr-2"></i>Sigla</th>
-                  <th><i class="fas fa-hashtag mr-2"></i>Modaliades</th>
-                  <th><i class="fas fa-hashtag mr-2"></i>Ouro</th>
-                  <th><i class="fas fa-user mr-2"></i>Prata</th>
-                  <th><i class="fas fa-cogs mr-2"></i>Bronze</th>
+                  <th><i class="fas fa-globe mr-2"></i>Nome</th>
+                  <th><i class="fas fa-hashtag mr-2"></i>Sigla</th>
+                  <th><i class="fas fa-futbol mr-2"></i>Modaliades</th>
+                  <th><i class="fas fa-medal mr-2"></i>Ouro</th>
+                  <th><i class="fas fa-medal mr-2"></i>Prata</th>
+                  <th><i class="fas fa-medal mr-2"></i>Bronze</th>
                   <th><i class="fas fa-cogs mr-2"></i>Ações</th>
                 </tr>
               </thead>
@@ -297,6 +371,83 @@
       </div>
     </div>
 
+    <!-- Edit Association Modal -->
+    <div
+      class="modal fade"
+      id="editAssModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editAssModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="background: linear-gradient(135deg, #f59e0b, #d97706)"
+          >
+            <h5 class="modal-title" id="editAssModalLabel">
+              <i class="fas fa-edit mr-2"></i>Editar Associação
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editAssForm" onsubmit="return handleEditAssociation(event);">
+              <input type="hidden" id="editAssId" />
+              <div class="form-group">
+                <label for="editAssName">
+                  <i class="fas fa-user mr-1"></i>Nome:
+                </label>
+                <input
+                  type="text"
+                  id="editAssName"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAssSigla">
+                  <i class="fas fa-tag mr-1"></i>Sigla:
+                </label>
+                <input
+                  type="text"
+                  id="editAssSigla"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editAssModalidades">
+                  <i class="fas fa-futbol mr-1"></i>Modalidades:
+                </label>
+                <select
+                  id="editAssModalidades"
+                  class="form-control select2-multiple"
+                  multiple="multiple"
+                >
+                  <!-- Options will be loaded dynamically by JavaScript -->
+                </select>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-warning btn-block"
+                style="border-radius: 8px; padding: 0.75rem; font-weight: 600"
+              >
+                <i class="fas fa-save mr-2"></i>Guardar Alterações
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
       </div>
     </div>
@@ -304,6 +455,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{ url_for('static', filename='js/Ass.js') }}"></script>
 
     <script>

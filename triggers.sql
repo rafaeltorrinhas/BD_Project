@@ -1,4 +1,3 @@
-
 CREATE TRIGGER trg_DELETEMEDALS
 ON FADU_MEDALHAS
 AFTER DELETE
@@ -124,4 +123,27 @@ BEGIN
         PRINT 'Error occurred while updating tables on delet of a player after check if player with id -1 exists.';
         THROW;
     END CATCH
-END;    
+END;
+
+-- Trigger to handle cascading deletion when removing modalidades from an association
+CREATE OR ALTER TRIGGER TR_DeleteAssModalidade
+ON FADU_ASSMODALIDADE
+AFTER DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Delete related records from FADU_MEDALHAS
+    DELETE med
+    FROM FADU_MEDALHAS med
+    INNER JOIN deleted d ON med.Ass_Id = d.Ass_Id AND med.Mod_Id = d.Mod_Id;
+    
+    -- Delete related records from FADU_JOGO
+    DELETE j
+    FROM FADU_JOGO j
+    INNER JOIN deleted d ON j.Mod_Id = d.Mod_Id
+    INNER JOIN FADU_EQUIPA e1 ON j.Equipa_id1 = e1.Id
+    INNER JOIN FADU_EQUIPA e2 ON j.Equipa_id2 = e2.Id
+    WHERE e1.Ass_id = d.Ass_Id OR e2.Ass_id = d.Ass_Id;
+END;
+GO    

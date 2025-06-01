@@ -24,3 +24,17 @@ IDEIAS:
     - FAZER UM REGISTER DE JOGADORES PARA TER A CENA DA ENCRIPTAÇÃO E, CASO TENHAMOS TEMPO, FAZER UM LOGIN QUE TENHA UM PREFIL QUE MOSTRE AS CENAS EM QUE ESSE JOGADOR PERTENCEU
     - USAR CURSORES PARA FAZER RANKINGS DIFERENTES (MAIS GOLOS POR MODALIDADES, MAIS PONTOS POR MODALIDADE, ETC.)
     
+
+
+1 de junho:
+
+    - Ao criar inscrito meter o tipo de inscrito (para ver se tem ou não modalidades)
+    - Nos inscritos meter filtro por modalidades
+    - Dar fix ao deleteMedals nos detalhes das associações
+    - Na página dos jogos fazer uma parte de cima igual às outras páginas
+    - Colocar opção de editar e apagar os jogos
+    - Fazer filtros na universidade e meter os botões a funcionar (adicionar, apagar)
+    - Dar fix ao nome das tabelas
+    - Melhorar as views usadas nas páginas
+    - deve faltar mais mas não me lembro de mais nada 
+    - No fim de tudo, remover as funções inúteis e melhorar o código (opcional)

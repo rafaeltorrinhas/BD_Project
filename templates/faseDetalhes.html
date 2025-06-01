@@ -2,127 +2,151 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalhes da Fase</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-      .navbar {
-        background-color: #2c3e50;
-        padding: 1rem;
-        display: flex;
-        align-items: center;
-        color: white;
-      }
-      .navbar h1 {
-        margin: 0;
-        font-size: 1.5rem;
-      }
-      .navbar select {
-        margin-left: auto;
-        padding: 0.5rem;
-        font-size: 1rem;
-      }
-      .content {
-        padding: 2rem;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 1rem;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 0.5rem;
-        text-align: left;
-      }
-      th {
-        background: #f4f4f4;
-      }
-      .single-row-table {
-        margin-bottom: 1rem;
-      }
-    </style>
+
+    <!-- Bootstrap CDN -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
   <body>
-    <div class="navbar">
-      <h1>FADU Project</h1>
-      <select id="tableSelect">
-        <option value="">— Selecionar Vista —</option>
-        <option value="/Uni">Universidades</option>
-        <option value="/Ass">Associações</option>
-        <option value="/Jogos">Jogos</option>
-        <option value="/Fases" selected>Fases</option>
-        <option value="/Inscritos">Inscritos</option>
-      </select>
+    <!-- Modern Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
+
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="">— Selecionar Vista —</option>
+            <option value="/Uni">🏛️ Universidades</option>
+            <option value="/Ass">🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases" selected>📅 Fases</option>
+            <option value="/Inscritos">👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+      <div class="main-container fade-in">
+        <!-- Page Header -->
+        <div class="page-header">
+          <h1 class="page-title">
+            <i class="fas fa-calendar-alt"></i>
+            Detalhes da Fase
+          </h1>
+          <div class="text-muted">
+            <i class="fas fa-info-circle"></i>
+            Informações detalhadas sobre a fase
+          </div>
+        </div>
+
+        <!-- Phase Information Card -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title mb-0">
+              <i class="fas fa-info-circle mr-2"></i>
+              Informações da Fase
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="info-group">
+                  <label class="info-label">
+                    <i class="fas fa-tag mr-2"></i>
+                    Nome da Fase:
+                  </label>
+                  <span class="info-value">{{ faseName }}</span>
+                </div>
+                <div class="info-group">
+                  <label class="info-label">
+                    <i class="fas fa-building mr-2"></i>
+                    Associação Organizadora:
+                  </label>
+                  <span class="info-value">{{ rows[0][2] }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Games Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title mb-0">
+              <i class="fas fa-futbol mr-2"></i>
+              Jogos da Fase
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th><i class="fas fa-hashtag mr-2"></i>ID</th>
+                    <th><i class="fas fa-home mr-2"></i>Casa</th>
+                    <th><i class="fas fa-trophy mr-2"></i>Resultado</th>
+                    <th><i class="fas fa-away mr-2"></i>Fora</th>
+                    <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in rows %}
+                  <tr>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    <td>{{ row[5] }}</td>
+                    <td>{{ row[6] }}</td>
+                    <td>
+                      <button
+                        class="btn btn-sm btn-info"
+                        onclick="viewGameDetails('{{ row[3] }}')"
+                      >
+                        <i class="fas fa-eye"></i>
+                        Ver Detalhes
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="content">
-      <h2>Detalhes da Fase: {{ faseName }}</h2>
-
-      <!-- New Table for the first 3 columns -->
-      <table class="single-row-table">
-        <thead>
-          <tr>
-            <th>{{ columns[0] }}</th>
-            <th>{{ columns[1] }}</th>
-            <th>{{ columns[2] }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ rows[0][0] }}</td>
-            <!-- Id -->
-            <td>{{ rows[0][1] }}</td>
-            <!-- FaseName -->
-            <td>{{ rows[0][2] }}</td>
-            <!-- AssociacaoOrg -->
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Main Table for the rest of the data -->
-      <table>
-        <thead>
-          <tr>
-            {% for col in columns[3:] %}
-            <th>{{ col }}</th>
-            {% endfor %}
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            {% for cell in row[3:] %}
-            <td>{{ cell }}</td>
-            {% endfor %}
-            <td>
-              <button onclick="verDetalhes('{{ row[3] }}')">
-                Ver Detalhes
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+    <!-- JavaScript Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-      document
-        .getElementById("tableSelect")
-        .addEventListener("change", function () {
-          const path = this.value;
-          if (path) {
-            window.location.href = path;
-          }
-        });
+      function navigateToPage(url) {
+        if (url) {
+          window.location.href = url;
+        }
+      }
 
-      function verDetalhes(id) {
-        window.location.href = `/Jogos/${id}`;
+      function viewGameDetails(gameId) {
+        window.location.href = `/Jogos/${gameId}`;
       }
     </script>
   </body>

@@ -3,106 +3,101 @@
   <head>
     <meta charset="UTF-8" />
     <title>Fases</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-      .navbar {
-        background-color: #2c3e50;
-        padding: 1rem;
-        display: flex;
-        align-items: center;
-        color: white;
-      }
-      .navbar h1 {
-        margin: 0;
-        font-size: 1.5rem;
-      }
-      .navbar select {
-        margin-left: auto;
-        padding: 0.5rem;
-        font-size: 1rem;
-      }
-      .content {
-        padding: 2rem;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 1rem;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 0.5rem;
-        text-align: left;
-      }
-      th {
-        background: #f4f4f4;
-      }
-      button {
-        margin-right: 0.5rem;
-        padding: 0.3rem 0.6rem;
-        cursor: pointer;
-      }
-    </style>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
   <body>
-    <div class="navbar">
-      <h1>FADU Project</h1>
-      <select id="tableSelect">
-        <option value="">— Selecionar Vista —</option>
-        <option value="/Uni">Universidades</option>
-        <option value="/Ass">Associações</option>
-        <option value="/Jogos">Jogos</option>
-        <option value="/Fases" selected>Fases</option>
-        <option value="/Inscritos" >Inscritos</option>
-      </select>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
+
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="">— Selecionar Vista —</option>
+            <option value="/Uni">🏛️ Universidades</option>
+            <option value="/Ass">🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases" selected>📅 Fases</option>
+            <option value="/Inscritos">👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="main-container fade-in">
+        <div class="page-header">
+          <h1 class="page-title">
+            <i class="fas fa-calendar-alt"></i>
+            Fases
+          </h1>
+          <div class="text-muted">
+            <i class="fas fa-info-circle"></i>
+            Gerir informações das Fases
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  {% for col in columns %}
+                  <th><i class="fas fa-info-circle mr-2"></i>{{ col }}</th>
+                  {% endfor %}
+                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  {% for cell in row %}
+                  <td>{{ cell }}</td>
+                  {% endfor %}
+                  <td>
+                    <a href="#" class="view-phase" data-id="{{ row[0] }}" title="Ver Detalhes">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="content">
-      <h2>Fases</h2>
-      <table>
-        <thead>
-          <tr>
-            {% for col in columns %}
-            <th>{{ col }}</th>
-            {% endfor %}
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            {% for cell in row %}
-            <td>{{ cell }}</td>
-            {% endfor %}
-            <td>
-              <button onclick="verDetalhes('{{ row[0] }}')">
-                Ver Detalhes
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-      document
-        .getElementById("tableSelect")
-        .addEventListener("change", function () {
-          const path = this.value;
-          if (path) {
-            window.location.href = path;
-          }
-        });
-
-      function verDetalhes(id) {
-        window.location.href = `/Fases/${id}`;
+      function navigateToPage(url) {
+        if (url && url !== "#") {
+          window.location.href = url;
+        }
       }
+
+      document.addEventListener("click", function (e) {
+        if (e.target.closest(".view-phase")) {
+          e.preventDefault();
+          const phaseId = e.target.closest(".view-phase").getAttribute("data-id");
+          window.location.href = `/Fases/${phaseId}`;
+        }
+      });
     </script>
   </body>
 </html>

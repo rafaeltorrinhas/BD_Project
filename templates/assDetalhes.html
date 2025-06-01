@@ -2,172 +2,414 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalhes da Associação</title>
+
+    <!-- Bootstrap CDN -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
     <style>
-      body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 0;
+      .details-header {
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
       }
-      .navbar {
-        background-color: #2c3e50;
-        padding: 1rem;
+      .details-section {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem 2rem 1rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px 0 rgba(60,60,60,0.04);
+        border: none;
+      }
+      .details-section-title {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin-bottom: 1.2rem;
         display: flex;
         align-items: center;
-        color: white;
+        gap: 0.5rem;
       }
-      .navbar h1 {
-        margin: 0;
-        font-size: 1.5rem;
+      .details-info-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-bottom: 0.5rem;
       }
-      .navbar select {
-        margin-left: auto;
-        padding: 0.5rem;
-        font-size: 1rem;
+      .details-info-label {
+        font-weight: 500;
+        color: #222;
+        margin-right: 0.5rem;
       }
-      .content {
-        padding: 2rem;
+      .details-info-value {
+        color: #444;
       }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 1rem;
+      .details-divider {
+        border-top: 1px solid #eee;
+        margin: 1.5rem 0 1.5rem 0;
       }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 0.5rem;
-        text-align: left;
+      .medals-table th {
+        background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%);
+        color: #fff;
+        border: none;
+        font-weight: 600;
       }
-      th {
-        background: #f4f4f4;
+      .medals-table td {
+        background: #fff;
+        border: none;
+      }
+      .members-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        justify-content: space-between;
+      }
+      .member-block {
+        flex: 1 1 200px;
+        min-width: 180px;
+      }
+      .member-block h5 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .member-list {
+        padding-left: 1.2rem;
+        margin-bottom: 0;
+      }
+      /* Action buttons styling */
+      .delete-medal {
+        color: #dc3545;
+        text-decoration: none;
+        margin: 0 5px;
+        transition: color 0.2s;
+      }
+      .delete-medal:hover {
+        color: #c82333;
+        text-decoration: none;
+      }
+      .btn-primary {
+        background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%);
+        border: none;
+        transition: all 0.2s;
+      }
+      .btn-primary:hover {
+        background: linear-gradient(90deg, #1e40af 0%, #1e3a8a 100%);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: #6c757d;
+        border: none;
+        transition: all 0.2s;
+      }
+      .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+      }
+      @media (max-width: 768px) {
+        .details-section {
+          padding: 1rem 0.7rem;
+        }
+        .details-info-row {
+          flex-direction: column;
+          gap: 0.7rem;
+        }
+        .members-row {
+          flex-direction: column;
+          gap: 1.2rem;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="navbar">
-      <h1>FADU Project</h1>
-      <select id="tableSelect">
-        <option value="">— Selecionar Vista —</option>
-        <option value="/Uni">Universidades</option>
-        <option value="/Ass" selected>Associações</option>
-        <option value="/Jogos">Jogos</option>
-        <option value="/Fases">Fases</option>
-        <option value="/Inscritos" >Inscritos</option>
-      </select>
+    <!-- Modern Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
+
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="">— Selecionar Vista —</option>
+            <option value="/Uni">🏛️ Universidades</option>
+            <option value="/Ass" selected>🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases">📅 Fases</option>
+            <option value="/Inscritos">👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+      <div class="main-container fade-in">
+        <!-- Page Header -->
+        <div class="details-header">
+          <h1 class="page-title mb-1">
+            <i class="fas fa-trophy"></i>
+            Detalhes da Associação
+          </h1>
+          <div class="text-muted">
+            <i class="fas fa-info-circle"></i>
+            Informações detalhadas sobre a associação
+          </div>
+        </div>
+
+        <!-- Association Information Card -->
+        <section class="details-section">
+          <div class="details-section-title">
+            <i class="fas fa-info-circle"></i>
+            Informações da Associação
+          </div>
+          <div class="details-info-row">
+            <div>
+              <span class="details-info-label">
+                <i class="fas fa-building mr-1"></i>
+                Nome:
+              </span>
+              <span class="details-info-value">{{ rows[0][1] }}</span>
+            </div>
+            <div>
+              <span class="details-info-label">
+                <i class="fas fa-tag mr-1"></i>
+                Sigla:
+              </span>
+              <span class="details-info-value">{{ rows[0][2] }}</span>
+            </div>
+            <div>
+              <span class="details-info-label">
+                <i class="fas fa-running mr-1"></i>
+                Modalidades:
+              </span>
+              <span class="details-info-value">{{ rows[0][3] }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Medals Card -->
+        <section class="details-section">
+          <div class="details-section-title">
+            <i class="fas fa-medal"></i>
+            Medalhas
+          </div>
+          <div class="table-responsive">
+            <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#addMedalModal">
+              <i class="fas fa-plus"></i> Adicionar Medalha
+            </button>
+            <table class="table medals-table mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 40%"><i class="fas fa-medal mr-2"></i>Tipo</th>
+                  <th><i class="fas fa-calendar mr-2"></i>Ano</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for medal in medals_rows %}
+                <tr>
+                  <td>{{ medal[0] }}</td>
+                  <td>{{ medal[1] }}</td>
+                  <td>
+                    <a href="#" class="delete-medal" 
+                       data-medal-id="{{ medal[0] }}" 
+                       data-ass-id="{{ rows[0][0] }}"
+                       data-modalidade="{{ medal[0] }}"
+                       data-ano="{{ medal[1] }}"
+                       title="Delete">
+                      <i class="fas fa-trash-alt"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Members Card -->
+        <section class="details-section">
+          <div class="details-section-title">
+            <i class="fas fa-users"></i>
+            Membros
+          </div>
+          <div class="members-row">
+            <div class="member-block">
+              <h5><i class="fas fa-running"></i> Atletas</h5>
+              <ul class="member-list">
+                {% for athlete in athletes %}
+                <li>{{ athlete }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="member-block">
+              <h5><i class="fas fa-user-tie"></i> Treinadores</h5>
+              <ul class="member-list">
+                {% for coach in coaches %}
+                <li>{{ coach }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="member-block">
+              <h5><i class="fas fa-whistle"></i> Árbitros</h5>
+              <ul class="member-list">
+                {% for referee in referees %}
+                <li>{{ referee }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
 
-    <div class="content">
-      <h2>Detalhes da Associação: {{ AssName }}</h2>
-
-      <!-- General Association Info Table -->
-      <h3>Informações da Associação</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>{{ columns[0] }}</th>
-            <th>{{ columns[1] }}</th>
-            <th>{{ columns[2] }}</th>
-            <th>{{ columns[3] }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td>{{ row[0] }}</td>
-            <td>{{ row[1] }}</td>
-            <td>{{ row[2] }}</td>
-            <td>{{ row[3] }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Medals Table -->
-      <h3>Medalhas</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>{{ medals_columns[0] }}</th>
-            <th>{{ medals_columns[1] }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for medal in medals_rows %}
-          <tr>
-            <td>{{ medal[0] }}</td>
-            <!-- Medal Type -->
-            <td>{{ medal[1] }}</td>
-            <!-- Year -->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Athletes Table -->
-      <h3>Atletas</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Nome do Atleta</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for athlete in athletes %}
-          <tr>
-            <td>{{ athlete }}</td>
-            <!-- Display only the name -->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Coaches Table -->
-      <h3>Treinadores</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Nome do Treinador</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for coach in coaches %}
-          <tr>
-            <td>{{ coach }}</td>
-            <!-- Display only the name -->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Referees Table -->
-      <h3>Árbitros</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Nome do Árbitro</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for referee in referees %}
-          <tr>
-            <td>{{ referee }}</td>
-            <!-- Display only the name -->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- Add Medal Modal -->
+    <div class="modal fade" id="addMedalModal" tabindex="-1" role="dialog" aria-labelledby="addMedalModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addMedalModalLabel">Adicionar Medalha</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="addMedalForm">
+              <input type="hidden" id="assId" value="{{ rows[0][0] }}">
+              <div class="form-group">
+                <label for="modalidade">Modalidade</label>
+                <select class="form-control" id="modalidade" name="modalidade" required>
+                  <option value="">Selecione uma modalidade</option>
+                  {% for modalidade in rows[0][3].split(', ') %}
+                  <option value="{{ modalidade }}">{{ modalidade }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="tipoMedalha">Tipo de Medalha</label>
+                <select class="form-control" id="tipoMedalha" name="tipoMedalha" required>
+                  <option value="">Selecione o tipo</option>
+                  <option value="Ouro">Ouro</option>
+                  <option value="Prata">Prata</option>
+                  <option value="Bronze">Bronze</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="ano">Ano</label>
+                <input type="number" class="form-control" id="ano" name="ano" required min="2000" max="{{ current_year }}">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="saveMedal">
+              <i class="fas fa-save"></i> Guardar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- JavaScript Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-      document
-        .getElementById("tableSelect")
-        .addEventListener("change", function () {
-          const path = this.value;
-          if (path) {
-            window.location.href = path;
-          }
+      function navigateToPage(url) {
+        if (url) {
+          window.location.href = url;
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // Handle medal deletion
+        document.querySelectorAll('.delete-medal').forEach(button => {
+          button.addEventListener('click', function() {
+            if (confirm('Tem certeza que deseja remover esta medalha?')) {
+              const assId = this.dataset.assId;
+              const modalidade = this.dataset.modalidade;
+              const ano = this.dataset.ano;
+              
+              fetch(`/api/ass/${assId}/medalhas`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  modalidade: modalidade,
+                  ano: ano
+                })
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success') {
+                  location.reload();
+                } else {
+                  alert('Erro ao remover medalha: ' + data.message);
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Erro ao remover medalha');
+              });
+            }
+          });
         });
+
+        // Handle medal addition
+        document.getElementById('saveMedal').addEventListener('click', function() {
+          const form = document.getElementById('addMedalForm');
+          const assId = document.getElementById('assId').value;
+          const modalidade = document.getElementById('modalidade').value;
+          const tipoMedalha = document.getElementById('tipoMedalha').value;
+          const ano = document.getElementById('ano').value;
+
+          if (!modalidade || !tipoMedalha || !ano) {
+            alert('Por favor, preencha todos os campos');
+            return;
+          }
+
+          fetch(`/api/ass/${assId}/medalhas`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              modalidade: modalidade,
+              tipoMedalha: tipoMedalha,
+              ano: ano
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              location.reload();
+            } else {
+              alert('Erro ao adicionar medalha: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao adicionar medalha');
+          });
+        });
+      });
     </script>
   </body>
 </html>

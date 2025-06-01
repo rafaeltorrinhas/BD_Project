@@ -3,118 +3,181 @@
   <head>
     <meta charset="UTF-8" />
     <title>Universidades</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-      .navbar {
-        background-color: #2c3e50;
-        padding: 1rem;
-        display: flex;
-        align-items: center;
-        color: white;
-      }
-      .navbar h1 {
-        margin: 0;
-        font-size: 1.5rem;
-      }
-      .navbar select {
-        margin-left: auto;
-        padding: 0.5rem;
-        font-size: 1rem;
-      }
-      .content {
-        padding: 2rem;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 1rem;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 0.5rem;
-        text-align: left;
-      }
-      th {
-        background: #f4f4f4;
-      }
-      button {
-        margin-right: 0.5rem;
-        padding: 0.3rem 0.6rem;
-        cursor: pointer;
-      }
-    </style>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
   <body>
-    <div class="navbar">
-      <h1>FADU Project</h1>
-      <select id="tableSelect">
-        <option value="">— Selecionar Vista —</option>
-        <option value="/Uni" selected>Universidades</option>
-        <option value="/Ass">Associações</option>
-        <option value="/Jogos">Jogos</option>
-        <option value="/Fases">Fases</option>
-        <option value="/Inscritos">Inscritos</option>
-      </select>
-    </div>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-graduation-cap"></i>
+          FADU
+        </a>
 
-    <div class="content">
-      <h2>Universidades</h2>
-      <table>
-        <thead>
-          <tr>
-            {% for col in columns %}
-            <th>{{ col }}</th>
-            {% endfor %}
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            {% for cell in row %}
-            <td>{{ cell }}</td>
-            {% endfor %}
-            <td>
-              <button onclick="verDetalhes('{{ row[2] }}')">
-                Ver Associação
-              </button>
-              <form
-                action="/delete_university/{{ row[2] }}"
-                method="POST"
-                style="display: inline"
-              >
-                <button
-                  type="submit"
-                  onclick="return confirm('Tem a certeza que quer apagar esta universidade?')"
-                >
-                  Apagar
+        <div class="ml-auto">
+          <select class="nav-select" onchange="navigateToPage(this.value)">
+            <option value="">— Selecionar Vista —</option>
+            <option value="/Uni" selected>🏛️ Universidades</option>
+            <option value="/Ass">🏆 Associações</option>
+            <option value="/Jogos">⚽ Jogos</option>
+            <option value="/Fases">📅 Fases</option>
+            <option value="/Inscritos">👤 Inscritos</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="main-container fade-in">
+        <div class="page-header">
+          <h1 class="page-title">
+            <i class="fas fa-university"></i>
+            Universidades
+          </h1>
+          <div class="text-muted">
+            <i class="fas fa-info-circle"></i>
+            Gerir informações das Universidades
+          </div>
+        </div>
+
+        <div class="filter-section" id="filterSection">
+          <div class="filter-header" onclick="toggleFilters()">
+            <h3 class="filter-title">
+              <i class="fas fa-filter"></i>
+              Filtros Avançados
+            </h3>
+            <button class="filter-toggle" id="filterToggle">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="filter-content" id="filterContent">
+            <!-- Active Filters Display -->
+            <div class="active-filters" id="activeFilters" style="display: none">
+              <strong><i class="fas fa-tags mr-2"></i>Filtros Ativos:</strong>
+              <div class="active-filter-tags" id="activeFilterTags"></div>
+            </div>
+            <!-- Filter Form -->
+            <form id="filterForm">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-university"></i>
+                    Nome
+                  </label>
+                  <input type="text" id="filterNome" name="nome" class="filter-input" placeholder="Ex: Universidade do Porto" />
+                </div>
+                <div class="filter-group">
+                  <label class="filter-label">
+                    <i class="fas fa-tag"></i>
+                    Sigla
+                  </label>
+                  <input type="text" id="filterSigla" name="sigla" class="filter-input" placeholder="Ex: U.Porto" />
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button type="button" class="btn-filter btn-clear-filter" onclick="clearFilters()">
+                  <i class="fas fa-times"></i>
+                  Limpar Filtros
                 </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+                <button type="submit" class="btn-filter btn-apply-filter">
+                  <i class="fas fa-search"></i>
+                  Aplicar Filtros
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="controls-section mb-3 d-flex align-items-center justify-content-between">
+          <div></div>
+          <button id="openModalBtn" class="btn btn-add">
+            <i class="fas fa-plus"></i>
+            Adicionar Universidade
+          </button>
+        </div>
+
+        <div class="table-container">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  {% for col in columns %}
+                  <th><i class="fas fa-info-circle mr-2"></i>{{ col }}</th>
+                  {% endfor %}
+                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  {% for cell in row %}
+                  <td>{{ cell }}</td>
+                  {% endfor %}
+                  <td>
+                    <a href="#" class="view-uni" data-id="{{ row[2] }}" title="Ver Associação">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="#" class="delete-uni" data-id="{{ row[2] }}" title="Apagar">
+                      <i class="fas fa-trash-alt"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-      document
-        .getElementById("tableSelect")
-        .addEventListener("change", function () {
-          const path = this.value;
-          if (path) {
-            window.location.href = path;
-          }
-        });
-
-      function verDetalhes(id) {
-        window.location.href = `/Ass/${id}`;
+      function navigateToPage(url) {
+        if (url && url !== "#") {
+          window.location.href = url;
+        }
       }
+
+      document.addEventListener("click", function (e) {
+        if (e.target.closest(".view-uni")) {
+          e.preventDefault();
+          const uniId = e.target.closest(".view-uni").getAttribute("data-id");
+          window.location.href = `/Ass/${uniId}`;
+        }
+
+        if (e.target.closest(".delete-uni")) {
+          e.preventDefault();
+          const uniId = e.target.closest(".delete-uni").getAttribute("data-id");
+          if (confirm("Tem a certeza que quer apagar esta universidade?")) {
+            fetch(`/api/universidades/${uniId}`, {
+              method: "DELETE",
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.status === "success") {
+                  window.location.reload();
+                } else {
+                  alert("Erro ao apagar universidade: " + data.message);
+                }
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+                alert("Erro ao apagar universidade");
+              });
+          }
+        }
+      });
     </script>
   </body>
 </html>

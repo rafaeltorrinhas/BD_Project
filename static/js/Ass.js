@@ -5,6 +5,35 @@ document.addEventListener("DOMContentLoaded", function () {
         cachedAss = data;
     });
 
+    // Initialize Select2 for modalidade filter
+    $('#filterModalidade').select2({
+        placeholder: "Selecione uma ou mais modalidades",
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return "Nenhuma modalidade encontrada";
+            }
+        }
+    });
+
+    // Fetch modalidades and populate the filter dropdown
+    fetch('/api/modalidades')
+        .then((response) => response.json())
+        .then((data) => {
+            const select = document.getElementById('filterModalidade');
+            if (select && data.rows) {
+                data.rows.forEach((mod) => {
+                    const option = document.createElement('option');
+                    option.value = mod[1]; // Use modalidade name for filtering
+                    option.textContent = mod[1];
+                    select.appendChild(option);
+                });
+                // Refresh Select2 to show the new options
+                $('#filterModalidade').trigger('change');
+            }
+        });
+
     document.getElementById("searchInput").addEventListener("input", function () {
         const searchTerm = this.value.trim();
         if (searchTerm.length > 2) {
@@ -54,7 +83,7 @@ function renderAssInfoTable(accs) {
 
     tbody.innerHTML = "";
     if (accs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">No Associacoes found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">No Associations found.</td></tr>';
         return;
     }
     accs.forEach((acc) => {
@@ -63,10 +92,10 @@ function renderAssInfoTable(accs) {
         <td>${acc[0]}</td>
         <td>${acc[1]}</td>
         <td>${acc[2]}</td>
-        <td>${acc[3]}</td>
-        <td>${acc[4]}</td>
-        <td>${acc[5]}</td>
-        <td>${acc[6]}</td>
+        <td>${acc[3] || ''}</td>
+        <td>${acc[4] || 0}</td>
+        <td>${acc[5] || 0}</td>
+        <td>${acc[6] || 0}</td>
         <td>
             <a href="#" class="edit-acc" data-id="${acc[0]}" title="Edit">
                 <i class="fas fa-edit"></i>
@@ -80,18 +109,14 @@ function renderAssInfoTable(accs) {
         </td>
     `;
         tbody.appendChild(row);
-
     });
 }
 
 document.addEventListener("click", function (e) {
-
-
     if (e.target.closest(".edit-acc")) {
         e.preventDefault();
-
-        //const accId = e.target.closest(".edit-acc").getAttribute("data-id");
-        //window.location.href = `/Ass/${accId}`;
+        const assId = e.target.closest(".edit-acc").getAttribute("data-id");
+        openEditModal(assId);
     }
     if (e.target.closest(".view-acc")) {
         e.preventDefault();
@@ -101,10 +126,8 @@ document.addEventListener("click", function (e) {
 
     if (e.target.closest(".delete-acc")) {
         e.preventDefault();
-        const accId = e.target
-            .closest(".delete-acc")
-            .getAttribute("data-id");
-        if (confirm("Are you sure you want to delete this acc?")) {
+        const accId = e.target.closest(".delete-acc").getAttribute("data-id");
+        if (confirm("Are you sure you want to delete this association?")) {
             deleteAcc(accId);
         }
     }
@@ -117,16 +140,16 @@ function deleteAcc(accId) {
         .then((response) => response.json())
         .then((data) => {
             if (data.status === "success") {
-                alert("Acc deleted successfully!");
+                alert("Association deleted successfully!");
                 loadAssInfo(1);
             } else {
-                console.error("Error deleting Acc:", data.message);
-                alert("Error deleting Acc: " + data.message);
+                console.error("Error deleting association:", data.message);
+                alert("Error deleting association: " + data.message);
             }
         })
         .catch((error) => {
-            console.error("Error deleting Acc:", error);
-            alert("Error deleting Acc: " + error);
+            console.error("Error deleting association:", error);
+            alert("Error deleting association: " + error);
         });
 }
 
@@ -268,8 +291,25 @@ document.getElementById("filterForm").addEventListener("submit", function (event
     activeFiltersContainer.innerHTML = "";
     document.getElementById("activeFilters").style.display = "block";
 
+    // Handle modalidades from Select2
+    const selectedModalidades = $('#filterModalidade').val();
+    if (selectedModalidades && selectedModalidades.length > 0) {
+        selectedModalidades.forEach(modalidade => {
+            const tag = document.createElement("div");
+            tag.className = "filter-tag";
+            tag.innerHTML = `
+                <span>Modalidade: ${modalidade}</span>
+                <button onclick="removeFilter('modalidade', '${modalidade}')" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            activeFiltersContainer.appendChild(tag);
+        });
+    }
+
+    // Handle other filters
     for (let [key, value] of formData.entries()) {
-        if (value && value.trim() !== "") {
+        if (key !== 'modalidade' && value && value.trim() !== "") {
             const tag = document.createElement("div");
             tag.className = "filter-tag";
 
@@ -277,7 +317,7 @@ document.getElementById("filterForm").addEventListener("submit", function (event
             switch (key) {
                 case "sort_by":
                     displayText = `Ordem: ${document.querySelector(
-                        `#filterSortBy option[value="${value}"]`
+                        `#filterSortBy option[value=\"${value}\"]`
                     ).textContent}`;
                     break;
                 default:
@@ -294,11 +334,18 @@ document.getElementById("filterForm").addEventListener("submit", function (event
         }
     }
 
-    console.log("Filters applied:", Object.fromEntries(formData));
-
     const params = new URLSearchParams();
+    
+    // Add modalidades
+    if (selectedModalidades && selectedModalidades.length > 0) {
+        selectedModalidades.forEach(modalidade => {
+            params.append('modalidade', modalidade);
+        });
+    }
+
+    // Add other filters
     for (let [key, value] of formData.entries()) {
-        if (value && value.trim() !== "") {
+        if (key !== 'modalidade' && value && value.trim() !== "") {
             params.append(key, value);
         }
     }
@@ -322,6 +369,9 @@ function toggleFilters() {
 function clearFilters() {
     // Clear all form inputs
     document.getElementById("filterForm").reset();
+    
+    // Clear Select2
+    $('#filterModalidade').val(null).trigger('change');
 
     // Hide active filters
     document.getElementById("activeFilters").style.display = "none";
@@ -332,21 +382,123 @@ function clearFilters() {
     console.log("Filters cleared");
 }
 
-function removeFilter(filterType) {
-    // Remove specific filter
-    console.log("Removing filter:", filterType);
-
-    // Find and remove the filter tag
-    const filterTags = document.querySelectorAll(".filter-tag");
-    filterTags.forEach((tag) => {
-        if (tag.textContent.toLowerCase().includes(filterType)) {
-            tag.remove();
+function removeFilter(key, value = null) {
+    if (key === 'modalidade' && value) {
+        const select = $('#filterModalidade');
+        const values = select.val();
+        const newValues = values.filter(v => v !== value);
+        select.val(newValues).trigger('change');
+    } else {
+        const input = document.querySelector(`[name="${key}"]`);
+        if (input) {
+            input.value = "";
         }
-    });
+    }
+    document.getElementById("filterForm").dispatchEvent(new Event("submit"));
+}
 
-    // Hide active filters section if no tags remain
-    const remainingTags = document.querySelectorAll(".filter-tag");
-    if (remainingTags.length === 0) {
-        document.getElementById("activeFilters").style.display = "none";
+function openEditModal(id) {
+    const ass = cachedAss.rows.find((a) => a[0] === parseInt(id));
+    if (ass) {
+        document.getElementById("editAssId").value = ass[0];
+        document.getElementById("editAssName").value = ass[1];
+        document.getElementById("editAssSigla").value = ass[2];
+
+        // Initialize Select2 for modalidades if not already initialized
+        if (!$('#editAssModalidades').hasClass("select2-hidden-accessible")) {
+            $('#editAssModalidades').select2({
+                placeholder: "Selecione uma ou mais modalidades",
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return "Nenhuma modalidade encontrada";
+                    }
+                }
+            });
+        }
+
+        // First fetch all available modalidades
+        fetch('/api/modalidades')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('editAssModalidades');
+                select.innerHTML = ''; // Clear existing options
+                
+                // Add all modalidades as options
+                data.rows.forEach(mod => {
+                    const option = document.createElement('option');
+                    option.value = mod[1]; // Use modalidade name as value
+                    option.textContent = mod[1];
+                    select.appendChild(option);
+                });
+
+                // Then fetch and set the current association's modalidades
+                return fetch(`/api/ass/${id}/modalidades`);
+            })
+            .then(response => response.json())
+            .then(modalidadesData => {
+                // Set the selected modalidades
+                const selectedModalidades = modalidadesData.rows.map(row => row[1]);
+                $('#editAssModalidades').val(selectedModalidades).trigger('change');
+            })
+            .catch(error => {
+                console.error('Error loading modalidades:', error);
+            });
+
+        $("#editAssModal").modal("show");
+    }
+}
+
+async function handleEditAssociation(event) {
+    event.preventDefault();
+
+    const id = document.getElementById("editAssId").value;
+    const name = document.getElementById("editAssName").value;
+    const sigla = document.getElementById("editAssSigla").value;
+    const selectedModalidades = $('#editAssModalidades').val() || [];
+
+    try {
+        // Update association details
+        const formData = new FormData();
+        formData.append('assName', name);
+        formData.append('assSigla', sigla);
+
+        const response = await fetch(`/api/associacoes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(formData)
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to update association");
+        }
+
+        // Update modalidades
+        const modalidadesResponse = await fetch(`/api/ass/${id}/modalidades`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                modalidades: selectedModalidades
+            }),
+        });
+
+        if (!modalidadesResponse.ok) {
+            const errorData = await modalidadesResponse.json();
+            throw new Error(errorData.message || "Failed to update modalidades");
+        }
+
+        $("#editAssModal").modal("hide");
+        
+        // Reload the data to show updated modalidades
+        const updatedData = await loadAssInfo(1);
+        cachedAss = updatedData;
+        renderAssInfoTable(updatedData.rows);
+        renderPagination(updatedData.total_pages, updatedData.current_page);
+    } catch (error) {
+        console.error("Error updating association:", error);
+        alert("Failed to update association: " + error.message);
     }
 }

@@ -132,7 +132,7 @@ def get_ass():
 
 
 @app.route('/api/AssInfo')
-def get_Acc_Info():
+def get_Ass_Info():
         page = request.args.get('page', 1, type=int)
         per_page = 15
         offset = (page - 1) * per_page
@@ -146,6 +146,14 @@ def get_Acc_Info():
             filters.append("ass.Name LIKE ?")
             params.append(f"%{acc_name}%")
 
+        # Filter: modalidade
+        modalidades = request.args.getlist('modalidade')
+        having_clause = ''
+        if modalidades:
+            having_clause = "HAVING " + " AND ".join([
+                "STRING_AGG(mod.Name, ', ') LIKE ?" for _ in modalidades
+            ])
+            params.extend([f"%{modalidade}%" for modalidade in modalidades])
 
         # Sorting
         sort_by = request.args.get('sort_by', '').strip()
@@ -187,14 +195,18 @@ def get_Acc_Info():
                     FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
                 LEFT JOIN
                     FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
-                GROUP BY
-                    ass.Id, ass.Name, ass.Sigla
-
-                '''
+            '''
         )
 
         if filters:
             query += " WHERE " + " AND ".join(filters)
+
+        query += '''
+                GROUP BY
+                    ass.Id, ass.Name, ass.Sigla
+        '''
+        if having_clause:
+            query += f" {having_clause}"
 
         query += f'''
         {sort_clause}
@@ -208,18 +220,21 @@ def get_Acc_Info():
         count_query = '''
         SELECT COUNT(*) 
         FROM 
-            FADU_ASSOCIAÇAO_ACADEMICA 
+            FADU_ASSOCIAÇAO_ACADEMICA ass
+        LEFT JOIN
+            FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
+        LEFT JOIN
+            FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
         '''
         if filters:
             count_query += " WHERE " + " AND ".join(filters)
-
+        count_query += " GROUP BY ass.Id, ass.Name, ass.Sigla"
+        if having_clause:
+            count_query += f" {having_clause}"
         count_cols, count_data = getInfo(count_query, params)
-        total_ass = count_data[0][0] if count_data else 0
+        total_ass = len(count_data) if count_data else 0
         total_pages = math.ceil(total_ass / per_page)
 
-
-    
-        
         response = {
             'columns': associations_cols,
             'rows': associations_data,
@@ -559,21 +574,40 @@ def api_get_associacoes():
         return jsonify({'columns': associations_cols, 'rows': associations_data})
 
 
-@app.route('/api/associacoes/<acc>', methods=['DELETE'])
-def api_delete_acc(acc):
-    print(acc)
+@app.route('/api/associacoes/<ass>', methods=['DELETE'])
+def api_delete_ass(ass):
     try:
-        acc = int(acc)
-        callUserProcedure = '''
-            EXEC dbo.deleteAcc ? ;
-        '''
-        callUserPro(callUserProcedure, [acc])
-        return jsonify({'status': 'success'}), 200
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        cursor.execute("DELETE FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Id = ?", (ass,))
+        cnxn.commit()
+        cursor.close()
+        cnxn.close()
+        return jsonify({"status": "success"})
     except Exception as e:
-        print(f"Error deleting athlete: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)})
 
-
+@app.route('/api/associacoes/<ass>', methods=['PUT'])
+def api_update_acc(ass):
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        
+        # Get the updated data from the request
+        assName = request.form.get('assName')
+        assSigla = request.form.get('assSigla')
+        
+        # Update the association
+        cursor.execute(
+            "UPDATE FADU_ASSOCIAÇAO_ACADEMICA SET Name = ?, Sigla = ? WHERE Id = ?",
+            (assName, assSigla, ass)
+        )
+        cnxn.commit()
+        cursor.close()
+        cnxn.close()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 
 @app.route('/api/search_associacoes', methods=['GET'])
@@ -651,58 +685,64 @@ def api_get_modalidades():
     modalidades_cols, modalidades_data = getInfo(modalidades_query)
     return jsonify({'columns': modalidades_cols, 'rows': modalidades_data})
 
-# @app.route('/api/inscritos', methods=['POST', 'GET'])
-# def api_add_athlete():
-#     if (request.method == 'POST'):
-#         nome = request.form.get('athleteName', '').strip()
-#         numero_cc = request.form.get('athleteNumeroCC', '').strip()
-#         date_birth = request.form.get('athleteDateBirth', '').strip()
-#         email = request.form.get('athleteEmail', '').strip()
-#         phone = request.form.get('athletePhone', '').strip()
-#         ass_id = request.form.get('athleteAssId', '').strip()
+@app.route('/api/ass/<int:ass_id>/modalidades', methods=['GET'])
+def api_get_ass_modalidades(ass_id):
+    query = '''
+    SELECT mod.Id, mod.Name
+    FROM FADU_MODALIDADE mod
+    JOIN FADU_ASSMODALIDADE am ON mod.Id = am.Mod_Id
+    WHERE am.Ass_Id = ?
+    '''
+    cols, data = getInfo(query, (ass_id,))
+    return jsonify({'columns': cols, 'rows': data})
 
-#         callUserProcessure = '''
-#         DECLARE @NewPersonId INT;
-#         EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?, @NewPersonId OUTPUT;
-#         SELECT @NewPersonId;
-#         '''
-#         callUserPro(callUserProcessure, [
-#                     nome, numero_cc, date_birth, email, phone, ass_id])
-#         return jsonify({'status': 'success'})
-#     else:
-#         page = request.args.get('page', 1, type=int)
-#         per_page = 15
-#         offset = (page - 1) * per_page
-
-#         athletes_query = '''
-#         SELECT
-#             person.Id AS Person_Id,
-#             person.Name AS Athlete_Name
-#         FROM
-#             FADU_ATLETA atle
-#         JOIN
-#             FADU_PERSON person ON person.Id = atle.Person_Id
-#         ORDER BY
-#             person.Id
-#         OFFSET ? ROWS
-#         FETCH NEXT ? ROWS ONLY;
-#         '''
-#         athletes_cols, athletes_data = getInfo(
-#             athletes_query, [offset, per_page])
-
-#         count_query = "SELECT COUNT(*) FROM FADU_ATLETA"
-#         total_athletes = getInfo(count_query)[1][0][0]
-#         total_pages = math.ceil(total_athletes / per_page)
-
-#         response = {
-#             'columns': athletes_cols,
-#             'rows': athletes_data,
-#             'total_athletes': total_athletes,
-#             'total_pages': total_pages,
-#             'current_page': page
-#         }
-#         print(response)
-#         return jsonify(response)
+@app.route('/api/ass/<int:ass_id>/modalidades', methods=['PUT'])
+def api_update_ass_modalidades(ass_id):
+    try:
+        data = request.get_json()
+        modalidades = data.get('modalidades', [])
+        
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        
+        # First, get current modalidades
+        cursor.execute("SELECT Mod_Id FROM FADU_ASSMODALIDADE WHERE Ass_Id = ?", (ass_id,))
+        current_modalidades = [row[0] for row in cursor.fetchall()]
+        
+        # Get the IDs for the new modalidades
+        cursor.execute("SELECT Id, Name FROM FADU_MODALIDADE WHERE Name IN ({})".format(
+            ','.join(['?'] * len(modalidades))), modalidades)
+        new_modalidades = {row[1]: row[0] for row in cursor.fetchall()}
+        
+        # Delete modalidades that are no longer selected
+        cursor.execute("""
+            DELETE FROM FADU_ASSMODALIDADE 
+            WHERE Ass_Id = ? 
+            AND Mod_Id NOT IN ({})
+        """.format(','.join(['?'] * len(new_modalidades.values()))), 
+        [ass_id] + list(new_modalidades.values()))
+        
+        # Insert new modalidades that weren't already there
+        for modalidade_name, modalidade_id in new_modalidades.items():
+            cursor.execute("""
+                IF NOT EXISTS (
+                    SELECT 1 FROM FADU_ASSMODALIDADE 
+                    WHERE Ass_Id = ? AND Mod_Id = ?
+                )
+                BEGIN
+                    INSERT INTO FADU_ASSMODALIDADE (Ass_Id, Mod_Id)
+                    VALUES (?, ?)
+                END
+            """, (ass_id, modalidade_id, ass_id, modalidade_id))
+        
+        cnxn.commit()
+        cursor.close()
+        cnxn.close()
+        
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print(f"Error updating modalidades: {e}")  # Add logging
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/api/inscritos/<athlete>', methods=['DELETE'])
@@ -766,7 +806,8 @@ def get_athlete_details(athlete_id):
         P.DateBirth,
         P.Email,
         P.Phone,
-        A.Name AS AssociationName
+        A.Name AS AssociationName,
+        A.Id AS AssociationId
     FROM dbo.FADU_PERSON P
     INNER JOIN dbo.FADU_ATLETA AT ON P.Id = AT.Person_Id
     INNER JOIN dbo.FADU_ASSOCIAÇAO_ACADEMICA A ON P.Ass_Id = A.Id
@@ -776,19 +817,50 @@ def get_athlete_details(athlete_id):
 
     if rows:
         row = rows[0]
+        # Get modalidades for this athlete
+        modalidades_query = """
+        SELECT m.Id, m.Name
+        FROM FADU_MODALIDADE m
+        JOIN FADU_PERSONMOD pm ON m.Id = pm.Mod_Id
+        WHERE pm.Person_id = ?
+        """
+        modalidades_cols, modalidades_rows = getInfo(modalidades_query, (athlete_id,))
+        
         athlete = {
             'id': row[0],
             'name': row[1],
             'numeroCC': row[2],
-            # Ensure date formatting
             'dateBirth': row[3][:10] if row[3] else None,
             'email': row[4],
             'phone': row[5],
-            'associationName': row[6]
+            'associationName': row[6],
+            'associationId': row[7],
+            'modalidades': [{'id': m[0], 'name': m[1]} for m in modalidades_rows]
         }
         return jsonify(status='success', athlete=athlete)
     else:
         return jsonify(status='error', message='Athlete not found'), 404
+
+
+@app.route('/api/athlete/<int:athlete_id>/modalidades', methods=['PUT'])
+def api_update_athlete_modalidades(athlete_id):
+    try:
+        data = request.get_json()
+        modalidades = data.get('modalidades', [])
+        
+        # Convert modalidades list to comma-separated string of IDs
+        modalidades_ids = ','.join(str(m['id']) for m in modalidades)
+        
+        # Call the stored procedure
+        callUserProcedure = '''
+            EXEC dbo.updateAthleteModalidades ?, ?;
+        '''
+        callUserPro(callUserProcedure, [athlete_id, modalidades_ids])
+        
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print(f"Error updating athlete modalidades: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/api/inscritos', methods=['POST', 'GET'])
@@ -820,13 +892,13 @@ def api_add_athlete():
         # Filter: CC Number
         cc_number = request.args.get('cc_number', '').strip()
         if cc_number:
-            filters.append("person.NumeroCC LIKE ?")
+            filters.append("NumeroCC LIKE ?")
             params.append(f"%{cc_number}%")
 
         # Filter: Phone Number
         phone_number = request.args.get('phone_number', '').strip()
         if phone_number:
-            filters.append("person.Phone LIKE ?")
+            filters.append("Phone LIKE ?")
             params.append(f"%{phone_number}%")
 
         # Filter: Age
@@ -836,39 +908,90 @@ def api_add_athlete():
                 age_int = int(age)
                 current_year = datetime.datetime.now().year
                 birth_year = current_year - age_int
-                filters.append("YEAR(person.DateBirth) = ?")
+                filters.append("YEAR(DateBirth) = ?")
                 params.append(birth_year)
             except ValueError:
                 pass  # Skip invalid ages
 
+        # Filter: Type (Athlete, Coach, Referee)
+        inscrito_type = request.args.get('type', '').strip()
+        if inscrito_type:
+            filters.append("InscritoType = ?")
+            params.append(inscrito_type)
+
         # Sorting
         sort_by = request.args.get('sort_by', '').strip()
-        sort_clause = "ORDER BY person.Id"
+        sort_clause = "ORDER BY Person_Id"
         if sort_by:
             sort_map = {
-                "name_asc": "person.Name ASC",
-                "name_desc": "person.Name DESC",
-                "age_asc": "person.DateBirth DESC",  # younger first
-                "age_desc": "person.DateBirth ASC",  # older first
-                "birth_date_asc": "person.DateBirth ASC",
-                "birth_date_desc": "person.DateBirth DESC",
-                "association_asc": "ass.Name ASC",
-                "association_desc": "ass.Name DESC"
+                "name_asc": "Inscrito_Name ASC",
+                "name_desc": "Inscrito_Name DESC",
+                "age_asc": "DateBirth DESC",  # younger first
+                "age_desc": "DateBirth ASC",  # older first
+                "birth_date_asc": "DateBirth ASC",
+                "birth_date_desc": "DateBirth DESC",
+                "association_asc": "Association_Name ASC",
+                "association_desc": "Association_Name DESC",
+                "type_asc": "InscritoType ASC",
+                "type_desc": "InscritoType DESC"
             }
-            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'person.Id')}"
+            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'Person_Id')}"
 
         # Base query
         query = '''
+        WITH Inscritos AS (
+            SELECT 
+                p.Id AS Person_Id,
+                p.Name AS Inscrito_Name,
+                STRING_AGG(m.Name, ', ') AS Modalidades,
+                ass.Name AS Association_Name,
+                'Athlete' AS InscritoType
+            FROM 
+                FADU_PERSON p
+            JOIN 
+                FADU_ATLETA atle ON p.Id = atle.Person_Id
+            JOIN
+                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
+            LEFT JOIN
+                FADU_PERSONMOD pm ON p.Id = pm.Person_id
+            LEFT JOIN
+                FADU_MODALIDADE m ON pm.Mod_Id = m.Id
+            GROUP BY
+                p.Id, p.Name, ass.Name
+            UNION ALL
+            SELECT 
+                p.Id AS Person_Id,
+                p.Name AS Inscrito_Name,
+                NULL AS Modalidades,
+                ass.Name AS Association_Name,
+                'Coach' AS InscritoType
+            FROM 
+                FADU_PERSON p
+            JOIN 
+                FADU_TREINADOR coach ON p.Id = coach.Person_Id
+            JOIN
+                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
+            UNION ALL
+            SELECT 
+                p.Id AS Person_Id,
+                p.Name AS Inscrito_Name,
+                NULL AS Modalidades,
+                ass.Name AS Association_Name,
+                'Referee' AS InscritoType
+            FROM 
+                FADU_PERSON p
+            JOIN 
+                FADU_ARBITRO arb ON p.Id = arb.Person_Id
+            JOIN
+                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
+        )
         SELECT 
-            person.Id AS Person_Id,
-            person.Name AS Athlete_Name,
-            ass.Name AS Association_Name
-        FROM 
-            FADU_ATLETA atle
-        JOIN 
-            FADU_PERSON person ON person.Id = atle.Person_Id
-        JOIN
-            FADU_ASSOCIAÇAO_ACADEMICA ass ON person.Ass_Id = ass.Id
+            Person_Id,
+            Inscrito_Name,
+            Modalidades,
+            Association_Name,
+            InscritoType
+        FROM Inscritos
         '''
 
         if filters:
@@ -881,33 +1004,342 @@ def api_add_athlete():
         '''
         params_with_paging = params + [offset, per_page]
 
-        athletes_cols, athletes_data = getInfo(query, params_with_paging)
+        inscritos_cols, inscritos_data = getInfo(query, params_with_paging)
 
         # Count query for pagination
         count_query = '''
-        SELECT COUNT(*) 
-        FROM 
-            FADU_ATLETA atle
-        JOIN 
-            FADU_PERSON person ON person.Id = atle.Person_Id
-        JOIN
-            FADU_ASSOCIAÇAO_ACADEMICA ass ON person.Ass_Id = ass.Id
+        WITH Inscritos AS (
+            SELECT 
+                p.Id AS Person_Id,
+                p.Name AS Inscrito_Name,
+                STRING_AGG(m.Name, ', ') AS Modalidades,
+                ass.Name AS Association_Name,
+                'Athlete' AS InscritoType
+            FROM 
+                FADU_PERSON p
+            JOIN 
+                FADU_ATLETA atle ON p.Id = atle.Person_Id
+            JOIN
+                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
+            LEFT JOIN
+                FADU_PERSONMOD pm ON p.Id = pm.Person_id
+            LEFT JOIN
+                FADU_MODALIDADE m ON pm.Mod_Id = m.Id
+            GROUP BY
+                p.Id, p.Name, ass.Name
+            UNION ALL
+            SELECT 
+                p.Id AS Person_Id,
+                p.Name AS Inscrito_Name,
+                NULL AS Modalidades,
+                ass.Name AS Association_Name,
+                'Coach' AS InscritoType
+            FROM 
+                FADU_PERSON p
+            JOIN 
+                FADU_TREINADOR coach ON p.Id = coach.Person_Id
+            JOIN
+                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
+            UNION ALL
+            SELECT 
+                p.Id AS Person_Id,
+                p.Name AS Inscrito_Name,
+                NULL AS Modalidades,
+                ass.Name AS Association_Name,
+                'Referee' AS InscritoType
+            FROM 
+                FADU_PERSON p
+            JOIN 
+                FADU_ARBITRO arb ON p.Id = arb.Person_Id
+            JOIN
+                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
+        )
+        SELECT COUNT(*) FROM Inscritos
         '''
         if filters:
             count_query += " WHERE " + " AND ".join(filters)
 
         count_cols, count_data = getInfo(count_query, params)
-        total_athletes = count_data[0][0] if count_data else 0
-        total_pages = math.ceil(total_athletes / per_page)
+        total_inscritos = count_data[0][0] if count_data else 0
+        total_pages = math.ceil(total_inscritos / per_page)
 
         response = {
-            'columns': athletes_cols,
-            'rows': athletes_data,
-            'total_athletes': total_athletes,
+            'columns': inscritos_cols,
+            'rows': inscritos_data,
+            'total_inscritos': total_inscritos,
             'total_pages': total_pages,
             'current_page': page
         }
         return jsonify(response)
+
+
+@app.route('/api/ass/<int:ass_id>/medalhas', methods=['POST', 'DELETE'])
+def api_manage_medalhas(ass_id):
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        
+        if request.method == 'POST':
+            data = request.get_json()
+            modalidade = data.get('modalidade')
+            tipo_medalha = data.get('tipoMedalha')
+            ano = data.get('ano')
+            
+            # Get the modalidade ID
+            cursor.execute("SELECT Id FROM FADU_MODALIDADE WHERE Name = ?", (modalidade,))
+            mod_id = cursor.fetchone()[0]
+            
+            # Get the tipo medalha ID
+            cursor.execute("SELECT Id FROM FADU_TIPOMEDALHA WHERE Type = ?", (tipo_medalha,))
+            tipo_medalha_id = cursor.fetchone()[0]
+            
+            # Insert the medal
+            cursor.execute("""
+                INSERT INTO FADU_MEDALHAS (Ass_Id, Mod_Id, TypeMedal_Id, Year)
+                VALUES (?, ?, ?, ?)
+            """, (ass_id, mod_id, tipo_medalha_id, ano))
+            
+            cnxn.commit()
+            return jsonify({"status": "success"})
+            
+        elif request.method == 'DELETE':
+            data = request.get_json()
+            modalidade = data.get('modalidade')
+            ano = data.get('ano')
+            
+            # Get the modalidade ID
+            cursor.execute("SELECT Id FROM FADU_MODALIDADE WHERE Name = ?", (modalidade,))
+            mod_id = cursor.fetchone()[0]
+            
+            # Delete the medal
+            cursor.execute("""
+                DELETE FROM FADU_MEDALHAS 
+                WHERE Ass_Id = ? AND Mod_Id = ? AND Year = ?
+            """, (ass_id, mod_id, ano))
+            
+            cnxn.commit()
+            return jsonify({"status": "success"})
+            
+    except Exception as e:
+        print(f"Error managing medals: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cursor.close()
+        cnxn.close()
+
+
+@app.route('/inscritos/<int:inscrito_id>')
+def inscrito_details(inscrito_id):
+    # Get inscrito type and basic info
+    query = '''
+    SELECT 
+        person.Id,
+        person.Name,
+        person.NumeroCC,
+        person.DateBirth,
+        person.Email,
+        person.Phone,
+        ass.Name AS AssociationName,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM FADU_ATLETA a WHERE a.Person_Id = person.Id) THEN 'Athlete'
+            WHEN EXISTS (SELECT 1 FROM FADU_TREINADOR t WHERE t.Person_Id = person.Id) THEN 'Coach'
+            WHEN EXISTS (SELECT 1 FROM FADU_ARBITRO r WHERE r.Person_Id = person.Id) THEN 'Referee'
+        END AS InscritoType,
+        person.Ass_Id
+    FROM 
+        FADU_PERSON person
+    JOIN
+        FADU_ASSOCIAÇAO_ACADEMICA ass ON person.Ass_Id = ass.Id
+    WHERE 
+        person.Id = ?
+    '''
+    inscrito_cols, inscrito_data = getInfo(query, [inscrito_id])
+    inscrito = inscrito_data[0] if inscrito_data else None
+
+    if not inscrito:
+        return "Inscrito não encontrado", 404
+
+    # Get type-specific data
+    modalidades = []
+    athletes = []
+    competitions = []
+
+    if inscrito[7] == 'Athlete':
+        # Get athlete's modalidades
+        modalidades_query = '''
+        SELECT m.Id, m.Name
+        FROM FADU_MODALIDADE m
+        JOIN FADU_ATLETA_MODALIDADE am ON m.Id = am.Modalidade_Id
+        WHERE am.Athlete_Id = ?
+        '''
+        modalidades_cols, modalidades_data = getInfo(modalidades_query, [inscrito_id])
+        modalidades = modalidades_data
+
+    elif inscrito[7] == 'Coach':
+        # Get coach's athletes
+        athletes_query = '''
+        SELECT 
+            a.Person_Id,
+            p.Name
+        FROM 
+            FADU_ATLETA a
+        JOIN 
+            FADU_PERSON p ON p.Id = a.Person_Id
+        WHERE 
+            a.Coach_Id = ?
+        '''
+        athletes_cols, athletes_data = getInfo(athletes_query, [inscrito_id])
+        athletes = athletes_data
+
+    elif inscrito[7] == 'Referee':
+        # Get referee's competitions
+        competitions_query = '''
+        SELECT 
+            c.Id,
+            c.Name
+        FROM 
+            FADU_COMPETICAO c
+        JOIN 
+            FADU_ARBITRO_COMPETICAO ac ON c.Id = ac.Competicao_Id
+        WHERE 
+            ac.Arbitro_Id = ?
+        '''
+        competitions_cols, competitions_data = getInfo(competitions_query, [inscrito_id])
+        competitions = competitions_data
+
+    return render_template('inscrito_details.html', 
+                         inscrito=inscrito,
+                         modalidades=modalidades,
+                         athletes=athletes,
+                         competitions=competitions)
+
+
+@app.route('/api/inscritos/edit', methods=['POST'])
+def api_edit_inscrito():
+    inscrito_id = request.form.get('id', '').strip()
+    name = request.form.get('name', '').strip()
+    numero_cc = request.form.get('numeroCC', '').strip()
+    date_birth = request.form.get('dateBirth', '').strip()
+    email = request.form.get('email', '').strip()
+    phone = request.form.get('phone', '').strip()
+    ass_id = request.form.get('assId', '').strip()
+    modalidadesIds = request.form.get('modalidadesIds', '').strip()
+
+    # Get inscrito type
+    query = '''
+    SELECT 
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM FADU_ATLETA a WHERE a.Person_Id = ?) THEN 'Athlete'
+            WHEN EXISTS (SELECT 1 FROM FADU_TREINADOR t WHERE t.Person_Id = ?) THEN 'Coach'
+            WHEN EXISTS (SELECT 1 FROM FADU_ARBITRO r WHERE r.Person_Id = ?) THEN 'Referee'
+        END AS InscritoType
+    '''
+    cols, data = getInfo(query, [inscrito_id, inscrito_id, inscrito_id])
+    inscrito_type = data[0][0] if data else None
+
+    if not inscrito_type:
+        return jsonify({'status': 'error', 'message': 'Inscrito não encontrado'})
+
+    # Update person info
+    update_person_query = '''
+    UPDATE FADU_PERSON
+    SET Name = ?, NumeroCC = ?, DateBirth = ?, Email = ?, Phone = ?, Ass_Id = ?
+    WHERE Id = ?
+    '''
+    callUserPro(update_person_query, [name, numero_cc, date_birth, email, phone, ass_id, inscrito_id])
+
+    # Handle type-specific updates
+    if inscrito_type == 'Athlete' and modalidadesIds:
+        # Delete existing modalidades
+        delete_modalidades_query = '''
+        DELETE FROM FADU_ATLETA_MODALIDADE
+        WHERE Athlete_Id = ?
+        '''
+        callUserPro(delete_modalidades_query, [inscrito_id])
+
+        # Add new modalidades
+        for modalidade_id in modalidadesIds.split(','):
+            add_modalidade_query = '''
+            INSERT INTO FADU_ATLETA_MODALIDADE (Athlete_Id, Modalidade_Id)
+            VALUES (?, ?)
+            '''
+            callUserPro(add_modalidade_query, [inscrito_id, modalidade_id])
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/api/inscritos/delete/<int:inscrito_id>', methods=['POST'])
+def api_delete_inscrito(inscrito_id):
+    # Get inscrito type
+    query = '''
+    SELECT 
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM FADU_ATLETA a WHERE a.Person_Id = ?) THEN 'Athlete'
+            WHEN EXISTS (SELECT 1 FROM FADU_TREINADOR t WHERE t.Person_Id = ?) THEN 'Coach'
+            WHEN EXISTS (SELECT 1 FROM FADU_ARBITRO r WHERE r.Person_Id = ?) THEN 'Referee'
+        END AS InscritoType
+    '''
+    cols, data = getInfo(query, [inscrito_id, inscrito_id, inscrito_id])
+    inscrito_type = data[0][0] if data else None
+
+    if not inscrito_type:
+        return jsonify({'status': 'error', 'message': 'Inscrito não encontrado'})
+
+    # Delete type-specific records first
+    if inscrito_type == 'Athlete':
+        # Delete athlete's modalidades
+        delete_modalidades_query = '''
+        DELETE FROM FADU_ATLETA_MODALIDADE
+        WHERE Athlete_Id = ?
+        '''
+        callUserPro(delete_modalidades_query, [inscrito_id])
+
+        # Delete athlete record
+        delete_athlete_query = '''
+        DELETE FROM FADU_ATLETA
+        WHERE Person_Id = ?
+        '''
+        callUserPro(delete_athlete_query, [inscrito_id])
+
+    elif inscrito_type == 'Coach':
+        # Update athletes to remove coach reference
+        update_athletes_query = '''
+        UPDATE FADU_ATLETA
+        SET Coach_Id = NULL
+        WHERE Coach_Id = ?
+        '''
+        callUserPro(update_athletes_query, [inscrito_id])
+
+        # Delete coach record
+        delete_coach_query = '''
+        DELETE FROM FADU_TREINADOR
+        WHERE Person_Id = ?
+        '''
+        callUserPro(delete_coach_query, [inscrito_id])
+
+    elif inscrito_type == 'Referee':
+        # Delete referee's competitions
+        delete_competitions_query = '''
+        DELETE FROM FADU_ARBITRO_COMPETICAO
+        WHERE Arbitro_Id = ?
+        '''
+        callUserPro(delete_competitions_query, [inscrito_id])
+
+        # Delete referee record
+        delete_referee_query = '''
+        DELETE FROM FADU_ARBITRO
+        WHERE Person_Id = ?
+        '''
+        callUserPro(delete_referee_query, [inscrito_id])
+
+    # Finally, delete the person record
+    delete_person_query = '''
+    DELETE FROM FADU_PERSON
+    WHERE Id = ?
+    '''
+    callUserPro(delete_person_query, [inscrito_id])
+
+    return jsonify({'status': 'success'})
 
 
 if __name__ == '__main__':

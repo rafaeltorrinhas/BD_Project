@@ -228,3 +228,49 @@ BEGIN
             RAISERROR ('Error', 16, 1);
     END CATCH
 END;
+
+CREATE PROCEDURE dbo.updateAthleteModalidades
+    @PersonId INT,
+    @ModalidadesIds VARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Delete existing modalidades
+        DELETE FROM FADU_PERSONMOD
+        WHERE Person_id = @PersonId;
+
+        -- Insert new modalidades
+        DECLARE @Pos INT = 0;
+        DECLARE @Start INT = 1;
+        DECLARE @Mod_Id INT;
+        DECLARE @Len INT = LEN(@ModalidadesIds);
+        DECLARE @NextComma INT;
+
+        WHILE @Start <= @Len
+        BEGIN
+            SET @NextComma = CHARINDEX(',', @ModalidadesIds, @Start);
+
+            IF @NextComma = 0
+                SET @NextComma = @Len + 1;
+
+            SET @Mod_Id = CAST(SUBSTRING(@ModalidadesIds, @Start, @NextComma - @Start) AS INT);
+
+            INSERT INTO FADU_PERSONMOD (Person_id, Mod_Id)
+            VALUES (@PersonId, @Mod_Id);
+
+            SET @Start = @NextComma + 1;
+        END;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
