@@ -63,6 +63,9 @@ class querrys:
         ORDER BY T.TeamType, PlayerName, PlayerId;
     '''
     def get_Ass_Search_Name(self):
+        return self.get_Ass() + self.search_Ass_name()
+    
+    def get_Ass(self):
         return '''
         SELECT
             ass.Id AS Id,
@@ -82,6 +85,10 @@ class querrys:
             FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
         LEFT JOIN
             FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
+    '''
+        
+    def search_Ass_name(self):
+        return '''
         WHERE
             ass.Name LIKE ?
         GROUP BY
@@ -90,7 +97,8 @@ class querrys:
             ass.Id
         OFFSET ? ROWS
         FETCH NEXT ? ROWS ONLY;
-    '''
+        '''
+    
     def get_Jogos(self):
         return         '''
         SELECT
@@ -162,3 +170,46 @@ class querrys:
                 FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
         )
         '''
+    def get_Unis(self):
+        return'''
+            SELECT
+            uni.Name AS Nome,
+            uni.Address AS Endereço,
+            ass.Id as IdAssociação,
+            ass.Name AS NomeAssociação,
+            ass.Sigla AS SiglaAssociação
+            FROM
+            FADU_UNIVERSIDADE uni
+            LEFT JOIN
+            FADU_ASSOCIAÇAO_ACADEMICA ass
+            ON uni.Ass_Id = ass.Id
+            '''
+    def get_Ass_Details(self):
+        return f'''
+    SELECT
+        ass.Id AS Id,
+        ass.Name AS Nome,
+        ass.Sigla AS Sigla,
+        STRING_AGG(mod.Name, ', ') AS Modalidades
+    FROM
+        FADU_ASSOCIAÇAO_ACADEMICA ass
+    LEFT JOIN
+        FADU_ASSMODALIDADE am ON ass.Id = am.Ass_Id
+    LEFT JOIN
+        FADU_MODALIDADE mod ON am.Mod_Id = mod.Id
+    WHERE ass.Id = ?
+    GROUP BY
+        ass.Id, ass.Name, ass.Sigla;
+    '''
+    def get_Ass_Med(self):
+        return f'''
+    SELECT
+        tm.Type AS Tipo,
+        med.Year AS Ano
+    FROM
+        FADU_MEDALHAS med
+    LEFT JOIN
+        FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
+    WHERE med.Ass_Id = ?
+    ORDER BY med.Year, tm.Type;
+    '''

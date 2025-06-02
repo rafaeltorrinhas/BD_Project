@@ -106,29 +106,13 @@ def get_table(table_name):
 
 @app.route('/Uni/')
 def get_uni():
-
-    cols, serialized = getInfo(
-        '''
-            SELECT
-            uni.Name AS Nome,
-            uni.Address AS Endereço,
-            ass.Id as IdAssociação,
-            ass.Name AS NomeAssociação,
-            ass.Sigla AS SiglaAssociação
-            FROM
-            FADU_UNIVERSIDADE uni
-            LEFT JOIN
-            FADU_ASSOCIAÇAO_ACADEMICA ass
-            ON uni.Ass_Id = ass.Id
-            '''
-    )
+    querry =q.get_Unis()
+    cols, serialized = getInfo(querry)
 
     return render_template('uni.html', title='Universidades', columns=cols, rows=serialized)
 
-
 @app.route('/Ass/')
 def get_ass():
-
     return render_template('ass.html', title='Associações')
 
 
@@ -176,29 +160,7 @@ def get_Ass_Info():
             sort_clause = f"ORDER BY {sort_map.get(sort_by, 'ass.Id')}"
 
         # Base query
-        query = (
-            '''
-                SELECT
-                    ass.Id AS Id,
-                    ass.Name AS Nome,
-                    ass.Sigla AS Sigla,
-                    STRING_AGG(mod.Name, ', ') AS Modalidades,
-                    SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS Ouro,
-                    SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
-                    SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
-
-                FROM
-                    FADU_ASSOCIAÇAO_ACADEMICA ass
-                LEFT JOIN
-                    FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
-                LEFT JOIN
-                    FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
-                LEFT JOIN
-                    FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
-                LEFT JOIN
-                    FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
-            '''
-        )
+        query = q.get_Ass()
 
         if filters:
             query += " WHERE " + " AND ".join(filters)
@@ -299,35 +261,10 @@ def get_Fases_Id(FaseId):
 @app.route('/Ass/<AssId>')
 def get_Ass_Id(AssId):
     # Query to retrieve association details
-    query = f'''
-    SELECT
-        ass.Id AS Id,
-        ass.Name AS Nome,
-        ass.Sigla AS Sigla,
-        STRING_AGG(mod.Name, ', ') AS Modalidades
-    FROM
-        FADU_ASSOCIAÇAO_ACADEMICA ass
-    LEFT JOIN
-        FADU_ASSMODALIDADE am ON ass.Id = am.Ass_Id
-    LEFT JOIN
-        FADU_MODALIDADE mod ON am.Mod_Id = mod.Id
-    WHERE ass.Id = ?
-    GROUP BY
-        ass.Id, ass.Name, ass.Sigla;
-    '''
+    query = q.get_Ass_Details()
 
     # Query for medals
-    medals_query = f'''
-    SELECT
-        tm.Type AS Tipo,
-        med.Year AS Ano
-    FROM
-        FADU_MEDALHAS med
-    LEFT JOIN
-        FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
-    WHERE med.Ass_Id = ?
-    ORDER BY med.Year, tm.Type;
-    '''
+    medals_query = q.get_Ass_Med() 
     # Queries for athletes, coaches, and referees
     # Execute the queries and get the results
     cols, association_data = getInfo(query, (AssId,))
