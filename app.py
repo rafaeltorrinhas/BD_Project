@@ -249,70 +249,19 @@ def get_Ass_Info():
 
 @app.route('/Jogos/')
 def get_Jogos():
-    cols, serialized = getInfo(
-        '''
-        SELECT
-            jogo.Id AS ID,
-            accCasa.Name AS Casa,
-            jogo.Resultado AS Resultado,
-            accOponente.Name AS Fora,
-            mod.Name AS Modalidade  -- Add Modality Name
-        FROM
-            FADU_JOGO jogo
-        LEFT JOIN
-            FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
-        LEFT JOIN
-            FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
-        LEFT JOIN
-            FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
-        LEFT JOIN
-            FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
-        LEFT JOIN
-            FADU_MODALIDADE mod ON mod.Id = jogo.Mod_Id
-        '''
-    )
+    querry =q.get_Jogos()
+    cols, serialized = getInfo(querry)
     return render_template('jogos.html', title='Jogos', columns=cols, rows=serialized)
 
 
 @app.route('/Jogos/<GameId>')
 def get_Jogo_Id(GameId):
     # Query to get the game details
-    query = f'''
-    SELECT
-         jogo.Id AS Id,
-         accCasa.[Name] AS Casa,
-         jogo.Resultado AS Resultado,
-         accOponente.[Name] AS Oponente,
-         jogo.Duracao AS Tempo,
-         Jogo.LocalJogo AS Local,
-         mod.[Name] AS Modalidade
-     FROM FADU_JOGO jogo
-     INNER JOIN FADU_MODALIDADE mod ON mod.Id=jogo.Mod_Id
-     INNER JOIN FADU_EQUIPA casa ON casa.Id = jogo.Equipa_id1
-     INNER JOIN FADU_EQUIPA oponente ON oponente.Id = jogo.Equipa_id2
-     INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accCasa ON accCasa.Id = casa.Ass_id
-     INNER JOIN FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
-     WHERE jogo.Id = ?
-    '''
+    query = q.get_Game_Details()
     cols, serialized = getInfo(query, GameId)
 
     # Query to get the team player details
-    queryTeams = f'''
-        SELECT
-            T.TeamType,
-            T.TeamId,
-            person.[Name] AS PlayerName,
-            person.Id AS PlayerId
-        FROM FADU_JOGO jogo
-        CROSS APPLY (VALUES
-            ('Host', jogo.Equipa_id1),
-            ('Opponent', jogo.Equipa_id2)
-        ) AS T(TeamType, TeamId)
-        JOIN FADU_PERSONEQUIPA personTeam ON personTeam.EQUIPA_Id = T.TeamId
-        JOIN FADU_PERSON person ON person.Id = personTeam.Person_Id
-        WHERE jogo.Id = ?
-        ORDER BY T.TeamType, PlayerName, PlayerId;
-    '''
+    queryTeams = q.get_Player_From_Game()
     colsTeams, Teams = getInfo(queryTeams, GameId)
 
     # Get the game result (from the `Resultado` field)
@@ -339,20 +288,7 @@ def get_Fases():
 
 @app.route('/Fases/<FaseId>')
 def get_Fases_Id(FaseId):
-    query = f'''
-    select fase.Id as Id ,
-    fase.[Name] as FaseName,
-    ass.[Name] AS AssociacaoOrg,
-    jogo.Id AS GameID,
-    jogo.Equipa_id1 AS Casa,
-    jogo.Resultado AS Resultado,
-    jogo.Equipa_id2 AS Fora
-    from FADU_FASE fase
-    join FADU_ORGANIZACAO org on org.Fase_Id = fase.id
-    join FADU_ASSOCIAÇAO_ACADEMICA ass ON ass.Org_Id=org.Id
-    join FADU_JOGO jogo ON jogo.Fase_Id=fase.Id
-    where fase.Id = ?
-    '''
+    query = q.get_Fase_Info()
     cols, serialized = getInfo(query, FaseId)
 
     faseName = serialized[0][1] if serialized else "Fase desconhecida ou sem jogos."
@@ -605,34 +541,7 @@ def search_ass():
         return jsonify([])
 
     # Main query with pagination
-    query = '''
-        SELECT
-            ass.Id AS Id,
-            ass.Name AS Nome,
-            ass.Sigla AS Sigla,
-            STRING_AGG(mod.Name, ', ') AS Modalidades,
-            SUM(CASE WHEN tm.Type = 'Ouro' THEN 1 ELSE 0 END) AS Ouro,
-            SUM(CASE WHEN tm.Type = 'Prata' THEN 1 ELSE 0 END) AS Prata,
-            SUM(CASE WHEN tm.Type = 'Bronze' THEN 1 ELSE 0 END) AS Bronze
-        FROM
-            FADU_ASSOCIAÇAO_ACADEMICA ass
-        LEFT JOIN
-            FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
-        LEFT JOIN
-            FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
-        LEFT JOIN
-            FADU_MEDALHAS med ON ma.Mod_Id = med.Mod_Id AND ma.Ass_Id = med.Ass_Id
-        LEFT JOIN
-            FADU_TIPOMEDALHA tm ON med.TypeMedal_Id = tm.Id
-        WHERE
-            ass.Name LIKE ?
-        GROUP BY
-            ass.Id, ass.Name, ass.Sigla
-        ORDER BY
-            ass.Id
-        OFFSET ? ROWS
-        FETCH NEXT ? ROWS ONLY;
-    '''
+    query = q.get_Ass_Search_Name()
     params = [f'%{search}%', offset, per_page]
     acc_cols, acc_data = getInfo(query, params)
     results = [
@@ -782,7 +691,7 @@ def update_athlete(athlete_id):
 
 @app.route('/api/AssInscritos/<type>/<ass_id>', methods=['GET'])
 def get_Ass_Inscritos_Type(type,ass_id):
-    querry = q.getAssInsc(str(type))
+    querry = q.get_Ass_Insc(str(type))
     print(querry)
     cols, rows = getInfo(querry,[ass_id])
     return jsonify({'columns': cols, 'rows': rows})
@@ -945,53 +854,7 @@ def api_add_athlete():
             sort_clause = f"ORDER BY {sort_map.get(sort_by, 'p.Id')}"
 
         # Base query
-        query = '''
-        WITH Inscritos AS (
-            SELECT 
-                p.Id AS Person_Id,
-                p.Name AS Inscrito_Name,
-                STRING_AGG(m.Name, ', ') AS Modalidades,
-                ass.Name AS Association_Name,
-                'Athlete' AS InscritoType
-            FROM 
-                FADU_PERSON p
-            JOIN 
-                FADU_ATLETA atle ON p.Id = atle.Person_Id
-            JOIN
-                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
-            LEFT JOIN
-                FADU_PERSONMOD pm ON p.Id = pm.Person_id
-            LEFT JOIN
-                FADU_MODALIDADE m ON pm.Mod_Id = m.Id
-            GROUP BY
-                p.Id, p.Name, ass.Name
-            UNION ALL
-            SELECT 
-                p.Id AS Person_Id,
-                p.Name AS Inscrito_Name,
-                NULL AS Modalidades,
-                ass.Name AS Association_Name,
-                'Coach' AS InscritoType
-            FROM 
-                FADU_PERSON p
-            JOIN 
-                FADU_TREINADOR coach ON p.Id = coach.Person_Id
-            JOIN
-                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
-            UNION ALL
-            SELECT 
-                p.Id AS Person_Id,
-                p.Name AS Inscrito_Name,
-                NULL AS Modalidades,
-                ass.Name AS Association_Name,
-                'Referee' AS InscritoType
-            FROM 
-                FADU_PERSON p
-            JOIN 
-                FADU_ARBITRO arb ON p.Id = arb.Person_Id
-            JOIN
-                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
-        )
+        query = q.get_Atletas_search()+'''
         SELECT 
             Person_Id,
             Inscrito_Name,
@@ -1014,53 +877,7 @@ def api_add_athlete():
         inscritos_cols, inscritos_data = getInfo(query, params_with_paging)
 
         # Count query for pagination
-        count_query = '''
-        WITH Inscritos AS (
-            SELECT 
-                p.Id AS Person_Id,
-                p.Name AS Inscrito_Name,
-                STRING_AGG(m.Name, ', ') AS Modalidades,
-                ass.Name AS Association_Name,
-                'Athlete' AS InscritoType
-            FROM 
-                FADU_PERSON p
-            JOIN 
-                FADU_ATLETA atle ON p.Id = atle.Person_Id
-            JOIN
-                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
-            LEFT JOIN
-                FADU_PERSONMOD pm ON p.Id = pm.Person_id
-            LEFT JOIN
-                FADU_MODALIDADE m ON pm.Mod_Id = m.Id
-            GROUP BY
-                p.Id, p.Name, ass.Name
-            UNION ALL
-            SELECT 
-                p.Id AS Person_Id,
-                p.Name AS Inscrito_Name,
-                NULL AS Modalidades,
-                ass.Name AS Association_Name,
-                'Coach' AS InscritoType
-            FROM 
-                FADU_PERSON p
-            JOIN 
-                FADU_TREINADOR coach ON p.Id = coach.Person_Id
-            JOIN
-                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
-            UNION ALL
-            SELECT 
-                p.Id AS Person_Id,
-                p.Name AS Inscrito_Name,
-                NULL AS Modalidades,
-                ass.Name AS Association_Name,
-                'Referee' AS InscritoType
-            FROM 
-                FADU_PERSON p
-            JOIN 
-                FADU_ARBITRO arb ON p.Id = arb.Person_Id
-            JOIN
-                FADU_ASSOCIAÇAO_ACADEMICA ass ON p.Ass_Id = ass.Id
-        )
+        count_query = q.get_Atletas_search()+'''
         SELECT COUNT(*) FROM Inscritos
         '''
         if filters:

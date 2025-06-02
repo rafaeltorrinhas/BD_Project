@@ -74,7 +74,7 @@ function renderAssInfoTable(accs) {
             <a href="#" class="delete-acc" data-id="${acc[0]}" title="Delete">
                 <i class="fas fa-trash-alt"></i>
             </a>
-            <a href="#" class="view-acc" data-id="${acc[0]}" title="View Info">
+            <a href="/Ass/${acc[0]}" class="view-acc" data-id="${acc[0]}" title="View Info">
                 <i class="fas fa-info-circle"></i>
             </a>
         </td>
