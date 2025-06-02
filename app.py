@@ -5,7 +5,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for
 import pyodbc
 import math
 import json
-
+from querrys import querrys
 
 load_dotenv()
 
@@ -16,6 +16,7 @@ DB_DATABASE = os.getenv('DB_DATABASE')
 DB_USER = os.getenv('DB_USER',     'none')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'none')
 
+q = querrys()
 
 def get_connection():
 
@@ -391,54 +392,10 @@ def get_Ass_Id(AssId):
     WHERE med.Ass_Id = ?
     ORDER BY med.Year, tm.Type;
     '''
-
     # Queries for athletes, coaches, and referees
-    athletes_query = f'''
-    SELECT
-        person.Id AS Person_Id,
-        person.Name AS Athlete_Name
-    FROM
-        FADU_ATLETA atle
-    JOIN
-        FADU_PERSON person ON person.Id = atle.Person_Id
-    WHERE person.Ass_Id = ?
-    '''
-    coaches_query = f'''
-    SELECT
-        person.Id AS Person_Id,
-        person.Name AS Coach_Name
-    FROM
-        FADU_TREINADOR coach
-    JOIN
-        FADU_PERSON person ON person.Id = coach.Person_Id
-    WHERE person.Ass_Id = ?
-    '''
-    referees_query = f'''
-    SELECT
-        person.Id AS Person_Id,
-        person.Name AS Referee_Name
-    FROM
-        FADU_ARBITRO arb
-    JOIN
-        FADU_PERSON person ON person.Id = arb.Person_Id
-    WHERE person.Ass_Id = ?
-    '''
-
     # Execute the queries and get the results
     cols, association_data = getInfo(query, (AssId,))
     medals_cols, medals_data = getInfo(medals_query, (AssId,))
-    athletes_cols, athletes_data = getInfo(athletes_query, (AssId,))
-    coaches_cols, coaches_data = getInfo(coaches_query, (AssId,))
-    referees_cols, referees_data = getInfo(referees_query, (AssId,))
-
-    # Process athletes, coaches, and referees data
-    # Only extract the Name (second element of the tuple)
-    athletes_data = [athlete[1]
-                     for athlete in athletes_data] if athletes_data else []
-    coaches_data = [coach[1] for coach in coaches_data] if coaches_data else []
-    referees_data = [referee[1]
-                     for referee in referees_data] if referees_data else []
-
     # Association name (use the first row, which should contain the association name)
     assName = association_data[0][1] if association_data else "Associação desconhecida"
 
@@ -448,11 +405,7 @@ def get_Ass_Id(AssId):
                            columns=cols,
                            rows=association_data,
                            medals_columns=medals_cols,
-                           medals_rows=medals_data,
-                           athletes_columns=athletes_cols,
-                           athletes=athletes_data,
-                           coaches=coaches_data,
-                           referees=referees_data)
+                           medals_rows=medals_data,)
 
 
 def callUserPro(query, params=None):
@@ -825,6 +778,15 @@ def update_athlete(athlete_id):
     except Exception as e:
         print(f"Error updating athlete: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/AssInscritos/<type>/<ass_id>', methods=['GET'])
+def get_Ass_Inscritos_Type(type,ass_id):
+    querry = q.getAssInsc(str(type))
+    print(querry)
+    cols, rows = getInfo(querry,[ass_id])
+    return jsonify({'columns': cols, 'rows': rows})
+
 
 
 @app.route('/api/athlete/<int:athlete_id>', methods=['GET'])
@@ -1385,6 +1347,7 @@ def api_delete_inscrito(inscrito_id):
     callUserPro(delete_person_query, [inscrito_id])
 
     return jsonify({'status': 'success'})
+
 
 
 if __name__ == '__main__':

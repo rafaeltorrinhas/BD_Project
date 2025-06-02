@@ -30,6 +30,8 @@ IDEIAS:
 
     - Ao criar inscrito meter o tipo de inscrito (atleta, treinador, etc) (para ver se tem ou não modalidades) #feito
     - Fazer a verificaçáo das modalidades das associações nos atletas # com o trigger acho ue não é preciso
+    - colocar filtro por tipo de inscrito
+    - colocar tipo de inscrito na tabela dos inscritos
     - Se for treinador ou árbitro mudar o edit para ser compatível com o tipo de inscrito 
     - Nos inscritos meter filtro por modalidades 
     - Dar fix ao deleteMedals nos detalhes das associações
