@@ -904,11 +904,25 @@ def api_add_athlete():
         phone = request.form.get('athletePhone', '').strip()
         ass_id = request.form.get('athleteAssId', '').strip()
         modalidadesIds = request.form.get('modalidadesIds', '').strip()
-        callUserProcessure = '''
-        DECLARE @NewPersonId INT;
-        EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
-        SELECT @NewPersonId;
-        '''
+        selectedType = request.form.get('selectedType', '').strip()
+        if (selectedType==0):
+            callUserProcessure = '''
+            DECLARE @NewPersonId INT;
+            EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
+            SELECT @NewPersonId;
+            '''
+        elif(selectedType ==1):
+            callUserProcessure = '''
+            DECLARE @NewPersonId INT;
+            EXEC dbo.addTreinador ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
+            SELECT @NewPersonId;
+            '''
+        elif(selectedType ==2):
+            callUserProcessure = '''
+            DECLARE @NewPersonId INT;
+            EXEC dbo.addArbitro ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
+            SELECT @NewPersonId;
+            '''
         callUserPro(callUserProcessure, [
                     nome, numero_cc, date_birth, email, phone, ass_id,modalidadesIds])
         return jsonify({'status': 'success'})

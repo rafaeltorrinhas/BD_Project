@@ -228,6 +228,7 @@ BEGIN
             RAISERROR ('Error', 16, 1);
     END CATCH
 END;
+go
 
 CREATE PROCEDURE dbo.updateAthleteModalidades
     @PersonId INT,
@@ -274,3 +275,132 @@ BEGIN
     END CATCH;
 END;
 GO
+
+
+CREATE PROCEDURE dbo.addTreinador
+    @Name VARCHAR(64),
+    @NumeroCC CHAR(9),
+    @DateBirth DATE,
+    @Email VARCHAR(64),
+    @Phone CHAR(9),
+    @Ass_Id INT,
+    @NewModalidades VARCHAR(124),
+    @NewPersonId INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ToReturn INT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Insert into FADU_PERSON
+        INSERT INTO dbo.FADU_PERSON (Name, NumeroCC, DateBirth, Email, Phone, Ass_Id)
+        VALUES (@Name, @NumeroCC, @DateBirth, @Email, @Phone, @Ass_Id);
+
+        -- Fetch the new Person ID
+        SELECT @ToReturn = Id
+        FROM dbo.FADU_PERSON
+        WHERE NumeroCC = @NumeroCC;
+
+        INSERT INTO dbo.FADU_TREINADOR (Person_Id)
+        VALUES (@ToReturn);
+
+        DECLARE @Pos INT = 0;
+        DECLARE @Start INT = 1;
+        DECLARE @Mod_Id INT;
+        DECLARE @Len INT = LEN(@NewModalidades);
+        DECLARE @NextComma INT;
+
+        WHILE @Start <= @Len
+        BEGIN
+            SET @NextComma = CHARINDEX(',', @NewModalidades, @Start);
+
+            IF @NextComma = 0
+                SET @NextComma = @Len + 1;
+
+            SET @Mod_Id = CAST(SUBSTRING(@NewModalidades, @Start, @NextComma - @Start) AS INT);
+
+            INSERT INTO dbo.FADU_PERSONMOD (Person_id, Mod_Id)
+            VALUES (@ToReturn, @Mod_Id);
+
+            SET @Start = @NextComma + 1;
+        END;
+
+        SET @NewPersonId = @ToReturn;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
+END;
+go
+
+CREATE PROCEDURE dbo.addArbitro
+    @Name VARCHAR(64),
+    @NumeroCC CHAR(9),
+    @DateBirth DATE,
+    @Email VARCHAR(64),
+    @Phone CHAR(9),
+    @Ass_Id INT,
+    @NewModalidades VARCHAR(124),
+    @NewPersonId INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ToReturn INT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Insert into FADU_PERSON
+        INSERT INTO dbo.FADU_PERSON (Name, NumeroCC, DateBirth, Email, Phone, Ass_Id)
+        VALUES (@Name, @NumeroCC, @DateBirth, @Email, @Phone, @Ass_Id);
+
+        -- Fetch the new Person ID
+        SELECT @ToReturn = Id
+        FROM dbo.FADU_PERSON
+        WHERE NumeroCC = @NumeroCC;
+
+        INSERT INTO dbo.FADU_ARBITRO (Person_Id)
+        VALUES (@ToReturn);
+
+        DECLARE @Pos INT = 0;
+        DECLARE @Start INT = 1;
+        DECLARE @Mod_Id INT;
+        DECLARE @Len INT = LEN(@NewModalidades);
+        DECLARE @NextComma INT;
+
+        WHILE @Start <= @Len
+        BEGIN
+            SET @NextComma = CHARINDEX(',', @NewModalidades, @Start);
+
+            IF @NextComma = 0
+                SET @NextComma = @Len + 1;
+
+            SET @Mod_Id = CAST(SUBSTRING(@NewModalidades, @Start, @NextComma - @Start) AS INT);
+
+            INSERT INTO dbo.FADU_PERSONMOD (Person_id, Mod_Id)
+            VALUES (@ToReturn, @Mod_Id);
+
+            SET @Start = @NextComma + 1;
+        END;
+
+        SET @NewPersonId = @ToReturn;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
+END;
+go

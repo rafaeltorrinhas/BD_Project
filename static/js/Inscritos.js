@@ -173,15 +173,15 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 function handleAddAthlete(event) {
     event.preventDefault();
-    
+
     const select = document.getElementById("modalidadesSelect");
     const selectedOptions = Array.from(select.selectedOptions);
-    
+
     if (selectedOptions.length === 0) {
         alert("Please select at least one sports modalidade.");
         return false;
     }
-
+    const selectedType = document.querySelector('input[name="athleteType"]:checked');
     const payload = new URLSearchParams({
         athleteName: document.getElementById("athleteName").value,
         athleteNumeroCC: document.getElementById("athleteNumeroCC").value,
@@ -189,6 +189,7 @@ function handleAddAthlete(event) {
         athleteEmail: document.getElementById("athleteEmail").value,
         athletePhone: document.getElementById("athletePhone").value,
         athleteAssId: document.getElementById("athleteAssId").value,
+        selectedType: selectedType,
         modalidadesIds: selectedOptions.map(option => option.value).join(',')
     });
 
@@ -200,26 +201,26 @@ function handleAddAthlete(event) {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: payload.toString(),
     })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.status === "success") {
-            $("#addInfoModal").modal("hide");
-            // Clear the form
-            document.getElementById("athleteName").value = "";
-            document.getElementById("athleteNumeroCC").value = "";
-            document.getElementById("athleteDateBirth").value = "";
-            document.getElementById("athleteEmail").value = "";
-            document.getElementById("athletePhone").value = "";
-            document.getElementById("athleteAssId").value = "";
-            Array.from(select.options).forEach(option => option.selected = false);
-            
-            history.replaceState({}, document.title, window.location.pathname);
-            loadAthletes(1);
-        } else {
-            console.error("Server error:", data.message);
-        }
-    })
-    .catch((error) => console.error("Error adding athlete:", error));
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === "success") {
+                $("#addInfoModal").modal("hide");
+                // Clear the form
+                document.getElementById("athleteName").value = "";
+                document.getElementById("athleteNumeroCC").value = "";
+                document.getElementById("athleteDateBirth").value = "";
+                document.getElementById("athleteEmail").value = "";
+                document.getElementById("athletePhone").value = "";
+                document.getElementById("athleteAssId").value = "";
+                Array.from(select.options).forEach(option => option.selected = false);
+
+                history.replaceState({}, document.title, window.location.pathname);
+                loadAthletes(1);
+            } else {
+                console.error("Server error:", data.message);
+            }
+        })
+        .catch((error) => console.error("Error adding athlete:", error));
 
     return false;
 }
@@ -452,12 +453,43 @@ function loadModalidades() {
             allModalidades = data.rows || [];
             const select = document.getElementById("modalidadesSelect");
             if (select) {
+                // Add Bootstrap classes and make it multiple
+                select.className = "form-control form-control-lg";
+                select.setAttribute("multiple", "true");
+                select.setAttribute("size", "8"); // Show 8 options at once
+                select.style.height = "200px"; // Set a good height
+
                 select.innerHTML = "";
                 allModalidades.forEach(modalidade => {
                     const option = document.createElement("option");
                     option.value = modalidade[0]; // ID
                     option.textContent = modalidade[1]; // Name
                     select.appendChild(option);
+                });
+
+                // Add Bootstrap helper text with badge
+                if (!document.getElementById("modalidades-help")) {
+                    const helpContainer = document.createElement("div");
+                    helpContainer.className = "mt-2";
+
+                    const badge = document.createElement("span");
+                    badge.className = "badge badge-info mr-2";
+                    badge.innerHTML = '<i class="fas fa-info-circle"></i>';
+
+                    const helpText = document.createElement("small");
+                    helpText.className = "form-text text-muted";
+                    helpText.textContent = "Hold Ctrl (Cmd on Mac) to select multiple modalidades";
+
+                    helpContainer.appendChild(badge);
+                    helpContainer.appendChild(helpText);
+                    helpContainer.id = "modalidades-help";
+
+                    select.parentNode.appendChild(helpContainer);
+                }
+
+                // Add selected count display
+                select.addEventListener("change", function () {
+                    updateSelectedCount(this);
                 });
             }
         })
@@ -534,7 +566,7 @@ function openEditModal(athleteId) {
                 loadAssociations("editAthleteAssId", athlete.associationId).then(() => {
                     // Add event listener for association change
                     const assSelect = document.getElementById("editAthleteAssId");
-                    assSelect.addEventListener("change", function() {
+                    assSelect.addEventListener("change", function () {
                         loadModalidadesForAssociation(this.value, athleteModalidades);
                     });
 
@@ -557,14 +589,14 @@ function loadModalidadesForAssociation(associationId, athleteModalidades) {
         .then(data => {
             const assModalidades = data.rows || [];
             const assModalidadesIds = new Set(assModalidades.map(m => m[0]));
-            
+
             // Get all modalidades to show athlete's current ones
             return fetch("/api/modalidades")
                 .then(response => response.json())
                 .then(allData => {
                     const allModalidades = allData.rows || [];
                     const combinedModalidades = new Map();
-                    
+
                     // Add all association modalidades
                     assModalidades.forEach(m => {
                         combinedModalidades.set(m[0], {
@@ -572,7 +604,7 @@ function loadModalidadesForAssociation(associationId, athleteModalidades) {
                             name: m[1]
                         });
                     });
-                    
+
                     // Add athlete's current modalidades that aren't in the association
                     if (athleteModalidades) {
                         athleteModalidades.forEach(m => {
@@ -581,7 +613,7 @@ function loadModalidadesForAssociation(associationId, athleteModalidades) {
                             }
                         });
                     }
-                    
+
                     // Populate the select
                     const select = document.getElementById("editModalidadesSelect");
                     if (select) {
@@ -631,44 +663,44 @@ function handleEditAthlete(event) {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: payload.toString(),
     })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.status === "success") {
-            // Then update the modalidades
-            const select = document.getElementById("editModalidadesSelect");
-            const selectedOptions = Array.from(select.selectedOptions);
-            const modalidadesPayload = {
-                modalidades: selectedOptions.map(option => ({
-                    id: parseInt(option.value),
-                    name: option.textContent.replace(" (outra associação)", "")
-                }))
-            };
-            
-            return fetch(`/api/athlete/${athleteId}/modalidades`, {
-                method: "PUT",
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify(modalidadesPayload)
-            });
-        } else {
-            throw new Error(data.message || "Error updating athlete");
-        }
-    })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.status === "success") {
-            $("#editInfoModal").modal("hide");
-            loadAthletes(1); // Refresh the table
-        } else {
-            throw new Error(data.message || "Error updating modalidades");
-        }
-    })
-    .catch((error) => {
-        console.error("Error updating athlete:", error);
-        alert("Error updating athlete: " + error.message);
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === "success") {
+                // Then update the modalidades
+                const select = document.getElementById("editModalidadesSelect");
+                const selectedOptions = Array.from(select.selectedOptions);
+                const modalidadesPayload = {
+                    modalidades: selectedOptions.map(option => ({
+                        id: parseInt(option.value),
+                        name: option.textContent.replace(" (outra associação)", "")
+                    }))
+                };
+
+                return fetch(`/api/athlete/${athleteId}/modalidades`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(modalidadesPayload)
+                });
+            } else {
+                throw new Error(data.message || "Error updating athlete");
+            }
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === "success") {
+                $("#editInfoModal").modal("hide");
+                loadAthletes(1); // Refresh the table
+            } else {
+                throw new Error(data.message || "Error updating modalidades");
+            }
+        })
+        .catch((error) => {
+            console.error("Error updating athlete:", error);
+            alert("Error updating athlete: " + error.message);
+        });
 
     return false;
 }
