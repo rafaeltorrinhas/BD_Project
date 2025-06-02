@@ -558,6 +558,8 @@ function openEditModal(athleteId) {
                 document.getElementById("editAthleteDateBirth").value = athlete.dateBirth;
                 document.getElementById("editAthleteEmail").value = athlete.email;
                 document.getElementById("editAthletePhone").value = athlete.phone;
+                document.getElementById("athleteType").textContent = athlete.type;
+
 
                 // Store athlete's current modalidades for later use
                 const athleteModalidades = athlete.modalidades || [];

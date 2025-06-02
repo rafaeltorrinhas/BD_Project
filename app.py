@@ -648,12 +648,26 @@ def get_athlete_details(athlete_id):
         A.Name AS AssociationName,
         A.Id AS AssociationId
     FROM dbo.FADU_PERSON P
-    INNER JOIN dbo.FADU_ATLETA AT ON P.Id = AT.Person_Id
     INNER JOIN dbo.FADU_ASSOCIAÇAO_ACADEMICA A ON P.Ass_Id = A.Id
     WHERE P.Id = ?
     """
     cols, rows = getInfo(query, (athlete_id,))
 
+    _, rowsCheck = getInfo('''
+                         SELECT *  FROM dbo.FADU_ATLETA WHERE Person_id = ?
+                         ''', (athlete_id,))
+    if (rowsCheck):
+        type = "athlete"
+    else:
+        _, rowsCheck = getInfo('''
+                         SELECT *  FROM dbo.FADU_TREINADOR WHERE Person_id = ?
+                         ''', (athlete_id,))
+        if(rowsCheck):
+            type ="coach"
+        else:
+            type="refere"
+    
+    
     if rows:
         row = rows[0]
         # Get modalidades for this athlete
@@ -674,7 +688,8 @@ def get_athlete_details(athlete_id):
             'phone': row[5],
             'associationName': row[6],
             'associationId': row[7],
-            'modalidades': [{'id': m[0], 'name': m[1]} for m in modalidades_rows]
+            'modalidades': [{'id': m[0], 'name': m[1]} for m in modalidades_rows],
+            'type': type
         }
         return jsonify(status='success', athlete=athlete)
     else:
