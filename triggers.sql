@@ -1,10 +1,21 @@
+
+
+
+
 CREATE TRIGGER trg_DELETEMEDALS
 ON FADU_MEDALHAS
-AFTER DELETE
+INSTEAD OF DELETE
 AS
 BEGIN
     BEGIN TRANSACTION;
     BEGIN TRY
+        -- First delete dependent children
+        DELETE MP
+        FROM FADU_MEDPERS MP
+        INNER JOIN deleted D
+            ON MP.Mod_Id = D.Mod_Id AND MP.Ass_Id = D.Ass_Id AND MP.Year = D.Year;
+
+        -- Then decrement medals
         UPDATE AM
         SET AM.Number_medals = AM.Number_medals - D.NumCount
         FROM FADU_ASSMODALIDADE AM
@@ -13,6 +24,12 @@ BEGIN
             FROM deleted
             GROUP BY Mod_Id, Ass_Id
         ) AS D ON AM.Mod_Id = D.Mod_Id AND AM.Ass_Id = D.Ass_Id;
+
+        -- Then delete parent
+        DELETE FM
+        FROM FADU_MEDALHAS FM
+        INNER JOIN deleted D
+            ON FM.Mod_Id = D.Mod_Id AND FM.Ass_Id = D.Ass_Id AND FM.Year = D.Year;
 
         COMMIT TRANSACTION;
     END TRY
@@ -152,13 +169,13 @@ END;
 GO
 
 -- checks if adter adding a person Modalidade if the ass that person is has that mod if not add it 
-CREATE OR ALTER TRIGGER trg_CheckModAss
-on FADU_PERSONMOD
-after INSERT
+CREATE OR ALTER TRIGGER trg_CHECKMODASS
+ON FADU_PERSONMOD
+AFTER INSERT
 AS
 BEGIN
     BEGIN TRANSACTION;
-    BEGIN TRY;
+    BEGIN TRY
         INSERT INTO FADU_ASSMODALIDADE (Mod_Id, Ass_Id, Number_medals)
         SELECT DISTINCT
             i.Mod_Id,
@@ -169,11 +186,13 @@ BEGIN
         LEFT JOIN FADU_ASSMODALIDADE AS assM
             ON assM.Mod_Id = i.Mod_Id AND assM.Ass_Id = p.Ass_Id
         WHERE assM.Mod_Id IS NULL;
-    BEGIN CATCH;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
         ROLLBACK TRANSACTION;
         PRINT 'Error occurred while updating Number_medals after insertion.';
         THROW;
     END CATCH
-
 END;
 

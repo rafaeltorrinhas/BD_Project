@@ -205,7 +205,8 @@ class querrys:
         return f'''
     SELECT
         tm.Type AS Tipo,
-        med.Year AS Ano
+        med.Year AS Ano,
+        med.Mod_Id AS Mod
     FROM
         FADU_MEDALHAS med
     LEFT JOIN

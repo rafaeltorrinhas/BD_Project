@@ -90,9 +90,10 @@ document.addEventListener("click", function (e) {
     if (e.target.closest(".edit-acc")) {
         e.preventDefault();
 
-        //const accId = e.target.closest(".edit-acc").getAttribute("data-id");
-        //window.location.href = `/Ass/${accId}`;
+        const accId = e.target.closest(".edit-acc").getAttribute("data-id");
+        openEditModal(accId);
     }
+
     if (e.target.closest(".view-acc")) {
         e.preventDefault();
         const accId = e.target.closest(".view-acc").getAttribute("data-id");
@@ -353,27 +354,113 @@ function removeFilter(filterType) {
 
 
 // edit model
-function openEditModal(accId) {
-    fetch(`/api/ass/${accId}`)
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.status === "success") {
-                const athlete = data.athlete;
-                document.getElementById("editAthleteId").value = athlete.id;
-                document.getElementById("editAthleteName").value = athlete.name;
-                document.getElementById("editAthleteNumeroCC").value = athlete.numeroCC;
-                document.getElementById("editAthleteDateBirth").value =
-                    athlete.dateBirth;
-                document.getElementById("editAthleteEmail").value = athlete.email;
-                document.getElementById("editAthletePhone").value = athlete.phone;
+function openEditModal(id) {
+    const ass = cachedAss.rows.find((a) => a[0] === parseInt(id));
 
-                loadAssociations("editAthleteAssId", athlete.associationId);
+    if (ass) {
+        document.getElementById("editAssId").value = ass[0];
+        document.getElementById("editAssName").value = ass[1];
+        document.getElementById("editAssSigla").value = ass[2];
 
-                $("#editInfoModal").modal("show");
-            } else {
-                console.error("Athlete not found");
-            }
+        // Initialize Select2 for universities if not already initialized
+        if (!$('#editAssUniversity').hasClass("select2-hidden-accessible")) {
+            $('#editAssUniversity').select2({
+                placeholder: "Selecione uma ou mais universidades",
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function () {
+                        return "Nenhuma universidade encontrada";
+                    }
+                }
+            });
+        }
+
+        // Load universities for the edit modal
+        loadUniversities("editAssUniversity", null, id).then(() => {
+            // First fetch all available modalidades
+            return fetch('/api/modalidades');
         })
-        .catch((error) => console.error("Error loading athlete:", error));
-}
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('editAssModalidades');
+                select.innerHTML = ''; // Clear existing options
 
+                // Add all modalidades as options
+                data.rows.forEach(mod => {
+                    const option = document.createElement('option');
+                    option.value = mod[1]; // Use modalidade name as value
+                    option.textContent = mod[1];
+                    select.appendChild(option);
+                });
+
+                // Then fetch and set the current association's modalidades
+                return fetch(`/api/ass/${id}/modalidades`);
+            })
+            .then(response => response.json())
+            .then(modalidadesData => {
+                // Set the selected modalidades
+                const selectedModalidades = modalidadesData.rows.map(row => row[1]);
+                $('#editAssModalidades').val(selectedModalidades).trigger('change');
+            })
+            .catch(error => {
+                console.error('Error loading modalidades:', error);
+            });
+
+        $("#editAssModal").modal("show");
+    }
+}
+async function handleEditAssociation(event) {
+    event.preventDefault();
+
+    const id = document.getElementById("editAssId").value;
+    const name = document.getElementById("editAssName").value;
+    const sigla = document.getElementById("editAssSigla").value;
+    const selectedUniversities = $('#editAssUniversity').val() || [];
+    const selectedModalidades = $('#editAssModalidades').val() || [];
+
+    try {
+        // Update association details
+        const formData = new FormData();
+        formData.append('assName', name);
+        formData.append('assSigla', sigla);
+        formData.append('universities', JSON.stringify(selectedUniversities));
+
+        const response = await fetch(`/api/associacoes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(formData)
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to update association");
+        }
+
+        // Update modalidades
+        const modalidadesResponse = await fetch(`/api/ass/${id}/modalidades`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                modalidades: selectedModalidades
+            }),
+        });
+
+        if (!modalidadesResponse.ok) {
+            const errorData = await modalidadesResponse.json();
+            throw new Error(errorData.message || "Failed to update modalidades");
+        }
+
+        $("#editAssModal").modal("hide");
+
+        // Reload the data to show updated modalidades
+        const updatedData = await loadAssInfo(1);
+        cachedAss = updatedData;
+        renderAssInfoTable(updatedData.rows);
+        renderPagination(updatedData.total_pages, updatedData.current_page);
+    } catch (error) {
+        console.error("Error updating association:", error);
+        alert("Failed to update association: " + error.message);
+    }
+}

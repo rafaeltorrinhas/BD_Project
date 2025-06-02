@@ -217,6 +217,7 @@
                 <tr>
                   <th style="width: 40%"><i class="fas fa-medal mr-2"></i>Tipo</th>
                   <th><i class="fas fa-calendar mr-2"></i>Ano</th>
+                  <th><i class="fas fa-calendar mr-2"></i>Mod_id</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -225,11 +226,12 @@
                 <tr>
                   <td>{{ medal[0] }}</td>
                   <td>{{ medal[1] }}</td>
+                  <td>{{ medal[2] }}</td>
                   <td>
                     <a href="#" class="delete-medal" 
                        data-medal-id="{{ medal[0] }}" 
                        data-ass-id="{{ rows[0][0] }}"
-                       data-modalidade="{{ medal[0] }}"
+                       data-modalidade="{{ medal[2] }}"
                        data-ano="{{ medal[1] }}"
                        title="Delete">
                       <i class="fas fa-trash-alt"></i>

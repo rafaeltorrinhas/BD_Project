@@ -629,7 +629,6 @@ def update_athlete(athlete_id):
 @app.route('/api/AssInscritos/<type>/<ass_id>', methods=['GET'])
 def get_Ass_Inscritos_Type(type,ass_id):
     querry = q.get_Ass_Insc(str(type))
-    print(querry)
     cols, rows = getInfo(querry,[ass_id])
     return jsonify({'columns': cols, 'rows': rows})
 
@@ -769,6 +768,7 @@ def api_add_athlete():
             filters.append("Phone LIKE ?")
             params.append(f"%{phone_number}%")
 
+
         # Filter: Age
         age = request.args.get('age', '').strip()
         if age:
@@ -851,57 +851,42 @@ def api_add_athlete():
 
 @app.route('/api/ass/<int:ass_id>/medalhas', methods=['POST', 'DELETE'])
 def api_manage_medalhas(ass_id):
-    try:
-        cnxn = get_connection()
-        cursor = cnxn.cursor()
         
         if request.method == 'POST':
             data = request.get_json()
             modalidade = data.get('modalidade')
             tipo_medalha = data.get('tipoMedalha')
             ano = data.get('ano')
-            
-            # Get the modalidade ID
-            cursor.execute("SELECT Id FROM FADU_MODALIDADE WHERE Name = ?", (modalidade,))
-            mod_id = cursor.fetchone()[0]
-            
-            # Get the tipo medalha ID
-            cursor.execute("SELECT Id FROM FADU_TIPOMEDALHA WHERE Type = ?", (tipo_medalha,))
-            tipo_medalha_id = cursor.fetchone()[0]
-            
+            print(ano,tipo_medalha,modalidade)
+
+            rows,s= getInfo(("SELECT Id FROM FADU_TIPOMEDALHA WHERE Type = ?", tipo_medalha))
+            tipo_medalha_id=s[0]
             # Insert the medal
-            cursor.execute("""
+            uery = ("""
                 INSERT INTO FADU_MEDALHAS (Ass_Id, Mod_Id, TypeMedal_Id, Year)
                 VALUES (?, ?, ?, ?)
-            """, (ass_id, mod_id, tipo_medalha_id, ano))
+            """, (ass_id, modalidade,tipo_medalha_id, ano))
             
-            cnxn.commit()
             return jsonify({"status": "success"})
             
         elif request.method == 'DELETE':
             data = request.get_json()
             modalidade = data.get('modalidade')
+            tipo_medalha = data.get('tipoMedalha')
             ano = data.get('ano')
+            print(ano,tipo_medalha,modalidade)
             
             # Get the modalidade ID
-            cursor.execute("SELECT Id FROM FADU_MODALIDADE WHERE Name = ?", (modalidade,))
-            mod_id = cursor.fetchone()[0]
-            
+  
             # Delete the medal
-            cursor.execute("""
+            callUserPro("""
                 DELETE FROM FADU_MEDALHAS 
                 WHERE Ass_Id = ? AND Mod_Id = ? AND Year = ?
-            """, (ass_id, mod_id, ano))
+            """, (ass_id, modalidade, ano))
             
-            cnxn.commit()
             return jsonify({"status": "success"})
             
-    except Exception as e:
-        print(f"Error managing medals: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-    finally:
-        cursor.close()
-        cnxn.close()
+
 
 
 @app.route('/inscritos/<int:inscrito_id>')

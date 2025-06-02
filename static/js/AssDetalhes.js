@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (confirm('Tem certeza que deseja remover esta medalha?')) {
                 const assId = this.dataset.assId;
                 const modalidade = this.dataset.modalidade;
+                const tipoMedalha = this.dataset.medalId;
                 const ano = this.dataset.ano;
 
                 fetch(`/api/ass/${assId}/medalhas`, {
@@ -14,7 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     body: JSON.stringify({
                         modalidade: modalidade,
-                        ano: ano
+                        ano: ano,
+                        tipoMedalha: tipoMedalha
                     })
                 })
                     .then(response => response.json())
