@@ -494,13 +494,7 @@ def search_ass():
     ]
 
     # Count query for pagination
-    count_query = '''
-        SELECT COUNT(*)
-        FROM
-            FADU_ASSOCIAÇAO_ACADEMICA ass
-        WHERE
-            ass.Name LIKE ?
-    '''
+    count_query = q.get_Count_Ass_Search_Name()
     count_cols, count_data = getInfo(count_query, [f'%{search}%'])
     total_ass = count_data[0][0] if count_data else 0
     total_pages = math.ceil(total_ass / per_page)

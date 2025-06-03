@@ -218,3 +218,12 @@ class querrys:
     WHERE med.Ass_Id = ?
     ORDER BY med.Year, tm.Type;
     '''
+    def get_Count_Ass_Search_Name():
+            # Count query for pagination
+        return  '''
+            SELECT COUNT(*)
+            FROM
+                FADU_ASSOCIAÇAO_ACADEMICA ass
+            WHERE
+                ass.Name LIKE ?
+        '''
