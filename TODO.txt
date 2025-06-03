@@ -30,16 +30,20 @@ IDEIAS:
 
     - Ao criar inscrito meter o tipo de inscrito (atleta, treinador, etc) (para ver se tem ou não modalidades) #feito
     - Fazer a verificaçáo das modalidades das associações nos atletas # com o trigger acho ue não é preciso
-    - colocar filtro por tipo de inscrito
-    - colocar tipo de inscrito na tabela dos inscritos
-    - Se for treinador ou árbitro mudar o edit para ser compatível com o tipo de inscrito 
+    - colocar filtro por tipo de inscrito # feito
+    - colocar tipo de inscrito na tabela dos inscritos  
+    - Se for treinador ou árbitro mudar o edit para ser compatível com o tipo de inscrito # acho ue ja esta 
     - Nos inscritos meter filtro por modalidades 
-    - Dar fix ao deleteMedals nos detalhes das associações
+    - Dar fix ao deleteMedals nos detalhes das associações 
     - Na página dos jogos fazer uma parte de cima igual às outras páginas
-    - Colocar opção de editar e apagar os jogos
+    - Colocar opção de editar e apagar os jogos 
     - Fazer filtros na universidade e meter os botões a funcionar (adicionar, apagar)
     - Dar fix ao nome das tabelas
     - Melhorar as views usadas nas páginas
     - No fim de tudo, remover as funções inúteis e melhorar o código (opcional)
+
+
+    --trigger se tu editares as ascoacoes modadlidaes duplica as modadlidaes
+    
 
 2 - trigger ideia se colocarmos um atela num depsorto numa associação ue nao existe adicionar a tabela assMod auele desporto # feito

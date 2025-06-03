@@ -211,9 +211,16 @@ def get_Ass_Info():
 
 @app.route('/Jogos/')
 def get_Jogos():
+    return render_template('jogos.html', title='Jogos')
+
+@app.route('/api/jogos/')
+def get_jogos():
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+    offset = (page - 1) * per_page
     querry =q.get_Jogos()
-    cols, serialized = getInfo(querry)
-    return render_template('jogos.html', title='Jogos', columns=cols, rows=serialized)
+    cols, serialized = getInfo(querry,[offset,per_page])
+    return jsonify({'columns': cols, 'rows': serialized})
 
 
 @app.route('/Jogos/<GameId>')

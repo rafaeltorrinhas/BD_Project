@@ -3,18 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>Jogos</title>
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-custom">
@@ -56,9 +48,7 @@
               <i class="fas fa-filter"></i>
               Filtros Avançados
             </h3>
-            <button class="filter-toggle" id="filterToggle">
-              <i class="fas fa-chevron-down"></i>
-            </button>
+            <button class="filter-toggle" id="filterToggle"><i class="fas fa-chevron-down"></i></button>
           </div>
 
           <div class="filter-content" id="filterContent">
@@ -76,12 +66,7 @@
                     <i class="fas fa-calendar"></i>
                     Data do Jogo
                   </label>
-                  <input
-                    type="date"
-                    id="filterGameDate"
-                    name="game_date"
-                    class="filter-input"
-                  />
+                  <input type="date" id="filterGameDate" name="game_date" class="filter-input" />
                 </div>
 
                 <div class="filter-group">
@@ -156,247 +141,170 @@
         <div class="controls-section">
           <div class="search-container">
             <i class="fas fa-search search-icon"></i>
-            <input
-              type="text"
-              id="searchInput"
-              class="search-input"
-              placeholder="Pesquisar jogo por modalidade, fase ou equipas..."
-            />
+            <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar jogo por modalidade, fase ou equipas..." />
+          </div>
+        </div>
+        <!-- Trigger Button -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#gameModal"><i class="fas fa-plus me-2"></i> Adicionar Novo Jogo</button>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="gameModal" tabindex="-1" aria-labelledby="gameModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+              <!-- Modal Header -->
+              <div class="modal-header bg-gradient bg-primary text-white border-0 py-3">
+                <h4 class="modal-title fw-bold" id="gameModalLabel"><i class="fas fa-futbol me-3"></i> Adicionar Jogo à Base de Dados</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <!-- Modal Body -->
+              <div class="modal-body p-4 bg-light">
+                <div class="container-fluid">
+                  <form id="addGameForm">
+                    <!-- Section 1: Game Info -->
+                    <div class="row mb-4">
+                      <div class="col-12">
+                        <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-info-circle me-2"></i>Informações do Jogo</h5>
+                      </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                      <!-- Modalidade -->
+                      <div class="col-md-6">
+                        <label for="modalidade" class="form-label fw-semibold text-dark"><i class="fas fa-trophy text-warning me-2"></i>Modalidade *</label>
+                        <select class="form-select form-select-lg border-2" id="modalidade" required>
+                          <option value="">Selecionar Modalidade</option>
+                          <option value="Futebol">⚽ Futebol</option>
+                          <option value="Basquetebol">🏀 Basquetebol</option>
+                          <option value="Voleibol">🏐 Voleibol</option>
+                          <option value="Andebol">🤾 Andebol</option>
+                          <option value="Futsal">⚽ Futsal</option>
+                          <option value="Ténis">🎾 Ténis</option>
+                          <option value="Padel">🏓 Padel</option>
+                          <option value="Rugby">🏉 Rugby</option>
+                        </select>
+                      </div>
+
+                      <!-- Fase -->
+                      <div class="col-md-6">
+                        <label for="fase" class="form-label fw-semibold text-dark"><i class="fas fa-flag text-success me-2"></i>Fase</label>
+                        <select class="form-select form-select-lg border-2" id="fase">
+                          <option value="">Selecionar Fase</option>
+                          <option value="Fase de Grupos">📊 Fase de Grupos</option>
+                          <option value="Oitavos de Final">🎯 Oitavos de Final</option>
+                          <option value="Quartos de Final">🎯 Quartos de Final</option>
+                          <option value="Meias-Finais">🏆 Meias-Finais</option>
+                          <option value="Final">👑 Final</option>
+                          <option value="Jogo Regular">📅 Jogo Regular</option>
+                          <option value="Play-offs">🔥 Play-offs</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Section 2: Teams -->
+                    <div class="row mb-4">
+                      <div class="col-12">
+                        <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-users me-2"></i>Equipas</h5>
+                      </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                      <!-- Primeira Equipa -->
+                      <div class="col-md-5">
+                        <label for="firstTeam" class="form-label fw-semibold text-dark"><i class="fas fa-shield-alt text-primary me-2"></i>Primeira Equipa *</label>
+                        <input type="text" class="form-control form-control-lg border-2" id="firstTeam" placeholder="Nome da equipa" required />
+                      </div>
+
+                      <!-- VS Divider -->
+                      <div class="col-md-2 d-flex align-items-end justify-content-center">
+                        <div class="text-center mb-3">
+                          <span class="badge bg-secondary fs-4 px-3 py-2 rounded-pill">VS</span>
+                        </div>
+                      </div>
+
+                      <!-- Equipa Adversária -->
+                      <div class="col-md-5">
+                        <label for="opponent" class="form-label fw-semibold text-dark"><i class="fas fa-shield-alt text-danger me-2"></i>Equipa Adversária *</label>
+                        <input type="text" class="form-control form-control-lg border-2" id="opponent" placeholder="Nome da equipa adversária" required />
+                      </div>
+                    </div>
+
+                    <!-- Section 3: Game Details -->
+                    <div class="row mb-4">
+                      <div class="col-12">
+                        <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-cog me-2"></i>Detalhes do Jogo</h5>
+                      </div>
+                    </div>
+
+                    <div class="row g-4">
+                      <!-- Campo -->
+                      <div class="col-md-6">
+                        <label for="camp" class="form-label fw-semibold text-dark"><i class="fas fa-map-marker-alt text-info me-2"></i>Campo/Local</label>
+                        <input type="text" class="form-control form-control-lg border-2" id="camp" placeholder="Nome do campo ou local" />
+                      </div>
+
+                      <!-- Duração -->
+                      <div class="col-md-6">
+                        <label for="duration" class="form-label fw-semibold text-dark"><i class="fas fa-clock text-warning me-2"></i>Duração do Jogo</label>
+                        <input type="text" class="form-control form-control-lg border-2" id="duration" placeholder="ex: 90 min, 2h 30min" />
+                      </div>
+                    </div>
+
+                    <!-- Required Fields Note -->
+                    <div class="row mt-4">
+                      <div class="col-12">
+                        <div class="alert alert-info border-0 shadow-sm">
+                          <i class="fas fa-info-circle me-2"></i>
+                          <small>Os campos marcados com * são obrigatórios</small>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Modal Footer -->
+              <div class="modal-footer bg-white border-0 pt-0 pb-4 px-4">
+                <div class="d-flex gap-2 w-100 justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary btn-lg px-4" onclick="clearForm()"><i class="fas fa-eraser me-2"></i> Limpar</button>
+                  <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i> Cancelar</button>
+                  <button type="button" class="btn btn-primary btn-lg px-4 shadow-sm" onclick="addGame()"><i class="fas fa-save me-2"></i> Adicionar Jogo</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="table-container">
           <div class="table-responsive">
-            <table class="table">
+            <table class="table" id="gamesTable">
               <thead>
-                <tr>
-                  {% for col in columns %}
-                  <th><i class="fas fa-info-circle mr-2"></i>{{ col }}</th>
-                  {% endfor %}
-                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
-                </tr>
+                <tr id="tableHeader"></tr>
               </thead>
-              <tbody>
-                {% for row in rows %}
-                <tr>
-                  {% for cell in row %}
-                  <td>{{ cell }}</td>
-                  {% endfor %}
-                  <td>
-                    <a href="#" class="view-game" data-id="{{ row[0] }}" title="Ver Detalhes">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
+              <tbody id="tableBody"></tbody>
             </table>
           </div>
         </div>
       </div>
+      <!-- Pagination -->
+      <nav aria-label="Navegação de páginas">
+        <ul id="pagination" class="pagination justify-content-center"></ul>
+      </nav>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ url_for('static', filename='js/Jogos.js') }}"></script>
     <script>
       function navigateToPage(url) {
-        if (url && url !== "#") {
-          window.location.href = url;
+        if (url && url !== '#') {
+          window.location.href = url
         }
       }
-
-      document.addEventListener("click", function (e) {
-        if (e.target.closest(".view-game")) {
-          e.preventDefault();
-          const gameId = e.target.closest(".view-game").getAttribute("data-id");
-          window.location.href = `/Jogos/${gameId}`;
-        }
-      });
-
-      // Filter functionality
-      function toggleFilters() {
-        const filterContent = document.getElementById("filterContent");
-        const filterToggle = document.getElementById("filterToggle");
-        
-        if (filterContent.style.display === "none") {
-          filterContent.style.display = "block";
-          filterToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
-        } else {
-          filterContent.style.display = "none";
-          filterToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
-        }
-      }
-
-      function clearFilters() {
-        document.getElementById("filterForm").reset();
-        document.getElementById("activeFilters").style.display = "none";
-        document.getElementById("activeFilterTags").innerHTML = "";
-        applyFilters();
-      }
-
-      function getFilterLabel(key) {
-        const labels = {
-          game_date: "Data",
-          sport: "Modalidade",
-          phase: "Fase",
-          sort_by: "Ordenação"
-        };
-        return labels[key] || key;
-      }
-
-      function getFilterValue(key, value) {
-        const valueLabels = {
-          date_asc: "Data (Mais Antigo)",
-          date_desc: "Data (Mais Recente)",
-          sport_asc: "Modalidade (A-Z)",
-          sport_desc: "Modalidade (Z-A)",
-          phase_asc: "Fase (A-Z)",
-          phase_desc: "Fase (Z-A)"
-        };
-        return valueLabels[value] || value;
-      }
-
-      function removeFilter(key) {
-        const input = document.querySelector(`[name="${key}"]`);
-        if (input) {
-          input.value = "";
-          updateActiveFilters();
-          applyFilters();
-        }
-      }
-
-      function applyFilters() {
-        const form = document.getElementById("filterForm");
-        const formData = new FormData(form);
-        const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-        const tableRows = document.querySelectorAll("tbody tr");
-        const tbody = document.querySelector("tbody");
-        const rows = Array.from(tableRows);
-
-        // First apply sorting
-        const sortBy = formData.get("sort_by");
-        if (sortBy) {
-          rows.sort((a, b) => {
-            let aValue, bValue;
-            
-            switch(sortBy) {
-              case "date_asc":
-              case "date_desc":
-                aValue = a.querySelector("td:nth-child(2)")?.textContent || "";
-                bValue = b.querySelector("td:nth-child(2)")?.textContent || "";
-                break;
-              case "sport_asc":
-              case "sport_desc":
-                aValue = a.querySelector("td:nth-child(3)")?.textContent || "";
-                bValue = b.querySelector("td:nth-child(3)")?.textContent || "";
-                break;
-              case "phase_asc":
-              case "phase_desc":
-                aValue = a.querySelector("td:nth-child(4)")?.textContent || "";
-                bValue = b.querySelector("td:nth-child(4)")?.textContent || "";
-                break;
-              default:
-                return 0;
-            }
-
-            if (sortBy.endsWith("_desc")) {
-              return bValue.localeCompare(aValue);
-            }
-            return aValue.localeCompare(bValue);
-          });
-
-          // Reorder rows in the DOM
-          rows.forEach(row => tbody.appendChild(row));
-        }
-
-        // Then apply filters
-        rows.forEach(row => {
-          const rowData = row.textContent.toLowerCase();
-          let shouldShow = true;
-
-          // Apply search filter
-          if (searchTerm && !rowData.includes(searchTerm)) {
-            shouldShow = false;
-          }
-
-          // Apply date filter
-          const gameDate = formData.get("game_date");
-          if (gameDate) {
-            const rowDate = row.querySelector("td:nth-child(2)")?.textContent;
-            if (rowDate && rowDate !== gameDate) {
-              shouldShow = false;
-            }
-          }
-
-          // Apply sport filter
-          const sport = formData.get("sport");
-          if (sport) {
-            const rowSport = row.querySelector("td:nth-child(3)")?.textContent;
-            if (rowSport && !rowSport.toLowerCase().includes(sport.toLowerCase())) {
-              shouldShow = false;
-            }
-          }
-
-          // Apply phase filter
-          const phase = formData.get("phase");
-          if (phase) {
-            const rowPhase = row.querySelector("td:nth-child(4)")?.textContent;
-            if (rowPhase && !rowPhase.toLowerCase().includes(phase.toLowerCase())) {
-              shouldShow = false;
-            }
-          }
-
-          row.style.display = shouldShow ? "" : "none";
-        });
-
-        updateActiveFilters();
-      }
-
-      function updateActiveFilters() {
-        const activeFilters = document.getElementById("activeFilters");
-        const activeFilterTags = document.getElementById("activeFilterTags");
-        const form = document.getElementById("filterForm");
-        const formData = new FormData(form);
-        
-        let hasActiveFilters = false;
-        activeFilterTags.innerHTML = "";
-
-        for (let [key, value] of formData.entries()) {
-          if (value) {
-            hasActiveFilters = true;
-            const tag = document.createElement("span");
-            tag.className = "filter-tag";
-            const displayValue = key === "sort_by" ? getFilterValue(key, value) : value;
-            tag.innerHTML = `${getFilterLabel(key)}: ${displayValue} <i class="fas fa-times" onclick="removeFilter('${key}')"></i>`;
-            activeFilterTags.appendChild(tag);
-          }
-        }
-
-        activeFilters.style.display = hasActiveFilters ? "block" : "none";
-      }
-
-      // Initialize filters
-      document.addEventListener("DOMContentLoaded", function() {
-        const filterForm = document.getElementById("filterForm");
-        
-        // Add change event listeners to all filter inputs
-        const filterInputs = filterForm.querySelectorAll("input, select");
-        filterInputs.forEach(input => {
-          input.addEventListener("change", function() {
-            applyFilters();
-          });
-        });
-
-        // Set initial filter content display
-        document.getElementById("filterContent").style.display = "none";
-
-        // Search functionality
-        const searchInput = document.getElementById("searchInput");
-        searchInput.addEventListener("input", function(e) {
-          applyFilters();
-        });
-      });
     </script>
   </body>
 </html>

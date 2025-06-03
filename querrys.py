@@ -100,13 +100,13 @@ class querrys:
         '''
     
     def get_Jogos(self):
-        return         '''
+        return '''
         SELECT
             jogo.Id AS ID,
             accCasa.Name AS Casa,
             jogo.Resultado AS Resultado,
             accOponente.Name AS Fora,
-            mod.Name AS Modalidade  -- Add Modality Name
+            mod.Name AS Modalidade
         FROM
             FADU_JOGO jogo
         LEFT JOIN
@@ -119,6 +119,10 @@ class querrys:
             FADU_ASSOCIAÇAO_ACADEMICA accOponente ON accOponente.Id = oponente.Ass_id
         LEFT JOIN
             FADU_MODALIDADE mod ON mod.Id = jogo.Mod_Id
+        ORDER BY
+            jogo.Id
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY;
         '''
         
     def get_Atletas_search(self):
