@@ -404,3 +404,49 @@ BEGIN
     END CATCH;
 END;
 go
+
+CREATE OR ALTER PROCEDURE dbo.ranking_cursor
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Equipa_Id INT, @Total_Ganhos INT
+
+    DECLARE ranking_cursor CURSOR FOR
+    SELECT Equipa_id1 AS Equipa_Id, COUNT(*) AS Total_Ganhos
+    FROM FADU_JOGO
+    WHERE Resultado LIKE '%-%' AND
+          (CAST(SUBSTRING(Resultado, 1, CHARINDEX('-', Resultado) - 1) AS INT) >
+           CAST(SUBSTRING(Resultado, CHARINDEX('-', Resultado) + 1, LEN(Resultado)) AS INT))
+    GROUP BY Equipa_id1
+    UNION
+    SELECT Equipa_id2 AS Equipa_Id, COUNT(*) AS Total_Ganhos
+    FROM FADU_JOGO
+    WHERE Resultado LIKE '%-%' AND
+          (CAST(SUBSTRING(Resultado, 1, CHARINDEX('-', Resultado) - 1) AS INT) <
+           CAST(SUBSTRING(Resultado, CHARINDEX('-', Resultado) + 1, LEN(Resultado)) AS INT))
+    GROUP BY Equipa_id2
+
+    OPEN ranking_cursor
+
+    FETCH NEXT FROM ranking_cursor INTO @Equipa_Id, @Total_Ganhos
+
+    CREATE TABLE #Ranking (Equipa_Id INT, Jogos_Ganhos INT)
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        INSERT INTO #Ranking (Equipa_Id, Jogos_Ganhos)
+        VALUES (@Equipa_Id, @Total_Ganhos)
+
+        FETCH NEXT FROM ranking_cursor INTO @Equipa_Id, @Total_Ganhos
+    END
+
+    CLOSE ranking_cursor
+    DEALLOCATE ranking_cursor
+
+    SELECT R.Equipa_Id, E.Ass_Id, R.Jogos_Ganhos
+    FROM #Ranking R
+    JOIN FADU_EQUIPA E ON R.Equipa_Id = E.Id
+    ORDER BY R.Jogos_Ganhos DESC
+
+END

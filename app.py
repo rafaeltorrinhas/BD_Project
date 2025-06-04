@@ -1236,6 +1236,45 @@ def api_ass_teams(assId):
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
+@app.route('/ranking')
+def ranking_page():
+    return render_template('ranking.html')
+
+@app.route('/api/ranking')
+def get_ranking():
+    try:
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+
+        # Execute the ranking cursor
+        cursor.execute('''
+            EXEC dbo.ranking_cursor
+        ''')
+
+        # Get the results
+        rows = cursor.fetchall()
+        
+        # Get team names
+        for i, row in enumerate(rows):
+            cursor.execute('''
+                SELECT ass.Name 
+                FROM FADU_ASSOCIAÇAO_ACADEMICA ass 
+                WHERE ass.Id = ?
+            ''', [row[1]])
+            ass_name = cursor.fetchone()[0]
+            rows[i] = (row[0], ass_name, row[2])  # (team_id, team_name, games_won)
+
+        cursor.close()
+        cnxn.close()
+
+        return jsonify({
+            'columns': ['Team ID', 'Team Name', 'Games Won'],
+            'rows': rows
+        })
+    except Exception as e:
+        print(f"Error getting ranking: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
