@@ -800,8 +800,9 @@ def api_add_athlete():
         phone = request.form.get('athletePhone', '').strip()
         ass_id = request.form.get('athleteAssId', '').strip()
         modalidadesIds = request.form.get('modalidadesIds', '').strip()
-        selectedType = request.form.get('selectedType', '').strip()
+        selectedType = int(request.form.get('selectedType', '').strip())
         if (selectedType==0):
+            print('entrei')
             callUserProcessure = '''
             DECLARE @NewPersonId INT;
             EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
