@@ -176,14 +176,6 @@
                         <label for="modalidade" class="form-label fw-semibold text-dark"><i class="fas fa-trophy text-warning me-2"></i>Modalidade *</label>
                         <select class="form-select form-select-lg border-2" id="modalidade" required>
                           <option value="">Selecionar Modalidade</option>
-                          <option value="Futebol">⚽ Futebol</option>
-                          <option value="Basquetebol">🏀 Basquetebol</option>
-                          <option value="Voleibol">🏐 Voleibol</option>
-                          <option value="Andebol">🤾 Andebol</option>
-                          <option value="Futsal">⚽ Futsal</option>
-                          <option value="Ténis">🎾 Ténis</option>
-                          <option value="Padel">🏓 Padel</option>
-                          <option value="Rugby">🏉 Rugby</option>
                         </select>
                       </div>
 
@@ -192,13 +184,6 @@
                         <label for="fase" class="form-label fw-semibold text-dark"><i class="fas fa-flag text-success me-2"></i>Fase</label>
                         <select class="form-select form-select-lg border-2" id="fase">
                           <option value="">Selecionar Fase</option>
-                          <option value="Fase de Grupos">📊 Fase de Grupos</option>
-                          <option value="Oitavos de Final">🎯 Oitavos de Final</option>
-                          <option value="Quartos de Final">🎯 Quartos de Final</option>
-                          <option value="Meias-Finais">🏆 Meias-Finais</option>
-                          <option value="Final">👑 Final</option>
-                          <option value="Jogo Regular">📅 Jogo Regular</option>
-                          <option value="Play-offs">🔥 Play-offs</option>
                         </select>
                       </div>
                     </div>
@@ -214,7 +199,9 @@
                       <!-- Primeira Equipa -->
                       <div class="col-md-5">
                         <label for="firstTeam" class="form-label fw-semibold text-dark"><i class="fas fa-shield-alt text-primary me-2"></i>Primeira Equipa *</label>
-                        <input type="text" class="form-control form-control-lg border-2" id="firstTeam" placeholder="Nome da equipa" required />
+                        <select class="form-select form-select-lg border-2" id="teamHost">
+                          <option value="">Selecionar primeiro mod</option>
+                        </select>
                       </div>
 
                       <!-- VS Divider -->
@@ -227,7 +214,9 @@
                       <!-- Equipa Adversária -->
                       <div class="col-md-5">
                         <label for="opponent" class="form-label fw-semibold text-dark"><i class="fas fa-shield-alt text-danger me-2"></i>Equipa Adversária *</label>
-                        <input type="text" class="form-control form-control-lg border-2" id="opponent" placeholder="Nome da equipa adversária" required />
+                        <select class="form-select form-select-lg border-2" id="teamOpo">
+                          <option value="">Selecionar primeiro mod</option>
+                        </select>
                       </div>
                     </div>
 
@@ -247,8 +236,11 @@
 
                       <!-- Duração -->
                       <div class="col-md-6">
-                        <label for="duration" class="form-label fw-semibold text-dark"><i class="fas fa-clock text-warning me-2"></i>Duração do Jogo</label>
-                        <input type="text" class="form-control form-control-lg border-2" id="duration" placeholder="ex: 90 min, 2h 30min" />
+                        <label for="duration" class="form-label fw-semibold text-dark"><i class="fas fa-clock text-warning me-2"></i>Duração do Jogo em minutos</label>
+                        <input type="number" step="1" min="0" class="form-control form-control-lg border-2" id="duration" placeholder="ex: 90" />
+                      </div>
+                      <div id="gameData" class="mt-2 p-2 bg-white border rounded shadow-sm text-dark">
+                        <input type="date" class="form-control" id="extraData" placeholder="Insira aqui o valor extra" />
                       </div>
                     </div>
 
@@ -271,6 +263,122 @@
                   <button type="button" class="btn btn-outline-secondary btn-lg px-4" onclick="clearForm()"><i class="fas fa-eraser me-2"></i> Limpar</button>
                   <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i> Cancelar</button>
                   <button type="button" class="btn btn-primary btn-lg px-4 shadow-sm" onclick="addGame()"><i class="fas fa-save me-2"></i> Adicionar Jogo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Edit Game Modal -->
+        <div class="modal fade" id="editGameModal" tabindex="-1" aria-labelledby="editGameModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+              <!-- Modal Header -->
+              <div class="modal-header bg-gradient bg-warning text-white border-0 py-3">
+                <h4 class="modal-title fw-bold" id="editGameModalLabel"><i class="fas fa-edit me-3"></i> Editar Jogo</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <!-- Modal Body -->
+              <div class="modal-body p-4 bg-light">
+                <div class="container-fluid">
+                  <form id="editGameForm">
+                    <!-- Section 1: Game Info -->
+                    <div class="row mb-4">
+                      <div class="col-12">
+                        <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-info-circle me-2"></i>Informações do Jogo</h5>
+                      </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                      <!-- Modalidade -->
+                      <div class="col-md-6">
+                        <label for="editModalidade" class="form-label fw-semibold text-dark"><i class="fas fa-trophy text-warning me-2"></i>Modalidade *</label>
+                        <select class="form-select form-select-lg border-2" id="editModalidade" required>
+                          <option value="">Selecionar Modalidade</option>
+                        </select>
+                      </div>
+
+                      <!-- Fase -->
+                      <div class="col-md-6">
+                        <label for="editFase" class="form-label fw-semibold text-dark"><i class="fas fa-flag text-success me-2"></i>Fase</label>
+                        <select class="form-select form-select-lg border-2" id="editFase">
+                          <option value="">Selecionar Fase</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Section 2: Teams -->
+                    <div class="row mb-4">
+                      <div class="col-12">
+                        <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-users me-2"></i>Equipas</h5>
+                      </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                      <!-- Primeira Equipa -->
+                      <div class="col-md-5">
+                        <label for="editTeamHost" class="form-label fw-semibold text-dark"><i class="fas fa-shield-alt text-primary me-2"></i>Primeira Equipa *</label>
+                        <select class="form-select form-select-lg border-2" id="editTeamHost">
+                          <option value="">Selecionar primeiro mod</option>
+                        </select>
+                      </div>
+
+                      <!-- VS Divider -->
+                      <div class="col-md-2 d-flex align-items-end justify-content-center">
+                        <div class="text-center mb-3">
+                          <span class="badge bg-secondary fs-4 px-3 py-2 rounded-pill">VS</span>
+                        </div>
+                      </div>
+
+                      <!-- Equipa Adversária -->
+                      <div class="col-md-5">
+                        <label for="editTeamOpo" class="form-label fw-semibold text-dark"><i class="fas fa-shield-alt text-danger me-2"></i>Equipa Adversária *</label>
+                        <select class="form-select form-select-lg border-2" id="editTeamOpo">
+                          <option value="">Selecionar primeiro mod</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Section 3: Game Details -->
+                    <div class="row mb-4">
+                      <div class="col-12">
+                        <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-cog me-2"></i>Detalhes do Jogo</h5>
+                      </div>
+                    </div>
+
+                    <div class="row g-4">
+                      <!-- Campo -->
+                      <div class="col-md-6">
+                        <label for="editCamp" class="form-label fw-semibold text-dark"><i class="fas fa-map-marker-alt text-info me-2"></i>Campo/Local</label>
+                        <input type="text" class="form-control form-control-lg border-2" id="editCamp" placeholder="Nome do campo ou local" />
+                      </div>
+
+                      <!-- Duração -->
+                      <div class="col-md-6">
+                        <label for="editDuration" class="form-label fw-semibold text-dark"><i class="fas fa-clock text-warning me-2"></i>Duração do Jogo em minutos</label>
+                        <input type="number" step="1" min="0" class="form-control form-control-lg border-2" id="editDuration" placeholder="ex: 90" />
+                      </div>
+                    </div>
+
+                    <!-- Required Fields Note -->
+                    <div class="row mt-4">
+                      <div class="col-12">
+                        <div class="alert alert-info border-0 shadow-sm">
+                          <i class="fas fa-info-circle me-2"></i>
+                          <small>Os campos marcados com * são obrigatórios</small>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Modal Footer -->
+              <div class="modal-footer bg-white border-0 pt-0 pb-4 px-4">
+                <div class="d-flex gap-2 w-100 justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary btn-lg px-4" onclick="clearForm()"><i class="fas fa-eraser me-2"></i> Limpar</button>
+                  <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i> Cancelar</button>
+                  <button type="button" class="btn btn-primary btn-lg px-4 shadow-sm" onclick="editGame()"><i class="fas fa-save me-2"></i> Salvar Alterações</button>
                 </div>
               </div>
             </div>

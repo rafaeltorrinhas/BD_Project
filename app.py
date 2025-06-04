@@ -213,14 +213,31 @@ def get_Ass_Info():
 def get_Jogos():
     return render_template('jogos.html', title='Jogos')
 
-@app.route('/api/jogos/')
+@app.route('/api/jogos/' , methods=['POST','GET'])
 def get_jogos():
-    page = request.args.get('page', 1, type=int)
-    per_page = 15
-    offset = (page - 1) * per_page
-    querry =q.get_Jogos()
-    cols, serialized = getInfo(querry,[offset,per_page])
-    return jsonify({'columns': cols, 'rows': serialized})
+    if request.method == 'GET':
+        page = request.args.get('page', 1, type=int)
+        per_page = 15
+        offset = (page - 1) * per_page
+        querry =q.get_Jogos()
+        cols, serialized = getInfo(querry,[offset,per_page])
+        return jsonify({'columns': cols, 'rows': serialized})
+    else:
+        data = request.get_json()
+        print(data)
+        host_team = data.get('hostTeam')
+        opponent_team = data.get('opponentTeam')
+        modality = data.get('modality')
+        duration = data.get('duration')
+        phase = data.get('phase')
+        location = data.get('location')
+        date = data.get('date')
+        querry=q.post_jogo()
+        callUserPro(querry,[date,duration,location,phase,modality,host_team,opponent_team])
+        return jsonify({'status': 'success'})
+        
+        
+        
 
 
 @app.route('/Jogos/<GameId>')
@@ -254,6 +271,24 @@ def get_Fases():
     cols, serialized = getInfo(query)
     return render_template('fases.html', title='Fases', columns=cols, rows=serialized)
 
+
+@app.route("/api/fases")
+def get_fases():
+    query = f'''
+    select * from FADU_FASE
+    '''
+    cols, serialized = getInfo(query)
+    return jsonify({'columns': cols, 'rows': serialized})
+
+
+
+
+@app.route("/api/teams/<modId>")
+def get_team_mod(modId):
+    query = q.get_team_modId()
+    cols, serialized = getInfo(query,[modId])
+    return jsonify({'columns': cols, 'rows': serialized})
+    
 
 @app.route('/Fases/<FaseId>')
 def get_Fases_Id(FaseId):

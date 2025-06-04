@@ -170,6 +170,20 @@ document.addEventListener("DOMContentLoaded", () => {
     // Hide filter section initially
     document.getElementById("filterContent").style.display = "none";
 
+    const selectElement = document.getElementById("modalidade");
+    selectElement.addEventListener("change", function () {
+        loadTeams().then((data) => {
+            cachedTeamns = data;
+        });;
+    });
+
+    const selectTeamHost = document.getElementById("teamHost");
+    selectTeamHost.addEventListener("change", function () {
+        if (cachedTeamns) {
+            console.log(cachedTeamns)
+            renderTeamOpo(cachedTeamns.columns, cachedTeamns.rows)
+        }
+    })
 
 
     // Filter input events
@@ -180,11 +194,90 @@ document.addEventListener("DOMContentLoaded", () => {
     const gameModal = document.getElementById("gameModal");
     if (gameModal) {
         gameModal.addEventListener("shown.bs.modal", () => {
+            loadModalidades()
+            loadFases()
             document.getElementById("modalidade").focus();
         });
     }
     loadGames()
 });
+
+
+
+function loadTeams() {
+    const selectElement = document.getElementById("modalidade");
+    const selectedValue = selectElement.value;
+
+    return fetch(`/api/teams/${selectedValue}`).then((response) => response.json()).then((data) => { renderTeamHost(data.columns, data.rows); return data })
+}
+
+function renderTeamOpo(coluns, rows) {
+    const selectMods = document.querySelector("#teamOpo")
+    selectMods.innerHTML = '<option value="">Selecionar team</option>';
+
+    const selectTest = document.getElementById("teamHost");
+    const selectedValue = selectTest.value;
+    rows.forEach(row => {
+        if (row[0] != selectedValue) {
+            const option = document.createElement("option");
+            option.value = row[0];    // Set the option's value
+            option.textContent = row[4]; // Set the displayed text
+            selectMods.appendChild(option);
+        }
+    });
+
+}
+
+
+function loadFases() {
+    return fetch('/api/fases').then((response) => response.json()).then((data) => { renderFases(data.columns, data.rows) })
+}
+
+function renderFases(coluns, rows) {
+    const selectMods = document.querySelector("#fase")
+    selectMods.innerHTML = '<option value="">Selecionar fase</option>';
+    rows.forEach(row => {
+        const option = document.createElement("option");
+        option.value = row[0];    // Set the option's value
+        option.textContent = row[1]; // Set the displayed text
+        selectMods.appendChild(option);
+    });
+}
+
+
+function renderTeamHost(coluns, rows) {
+    const selectMods = document.querySelector("#teamHost")
+    selectMods.innerHTML = '<option value="">Selecionar Team</option>';
+
+    const selectOpo = document.querySelector("#teamOpo")
+    selectOpo.innerHTML = '<option value="">Selecionar Team host primeiro</option>';
+
+    rows.forEach(row => {
+        console.log(row)
+        const option = document.createElement("option");
+        option.value = row[0];    // Set the option's value
+        option.textContent = row[4]; // Set the displayed text
+        selectMods.appendChild(option);
+    });
+}
+
+
+function loadModalidades() {
+    return fetch('/api/modalidades').then((response) => response.json()).then((data) => { renderMods(data.columns, data.rows) })
+
+}
+
+function renderMods(coluns, rows) {
+    const selectMods = document.querySelector("#modalidade")
+    selectMods.innerHTML = '<option value="">Selecionar Modalidade</option>';
+
+    rows.forEach(row => {
+        const option = document.createElement("option");
+        option.value = row[0];    // Set the option's value
+        option.textContent = row[1]; // Set the displayed text
+        selectMods.appendChild(option);
+    });
+}
 
 
 function loadGames(page) {
@@ -248,13 +341,52 @@ function clearForm() {
 }
 // Needs to be fully changed to work just the structure
 function addGame() {
-    // Add your game submission logic here
+    const hostValue = document.getElementById('teamHost').value;
+    const opoValue = document.getElementById('teamOpo').value;
+    const modValue = document.getElementById('modalidade').value;
+    const minutos = parseInt(document.getElementById('duration').value, 10);
+    const horas = Math.floor(minutos / 60);
+    const minutosRestantes = minutos % 60;
+    const duracao = `${String(horas).padStart(2, '0')}:${String(minutosRestantes).padStart(2, '0')}`;
+    const fase = document.getElementById('fase').value;
+    const local = document.getElementById('camp').value;
+    const date = document.getElementById('extraData').value;
+
     const form = document.getElementById('addGameForm');
     if (form.checkValidity()) {
-        // Process form data
-        console.log('Adding game...');
-        // Close modal after successful submission
+        // Build the data object
+        const gameData = {
+            hostTeam: hostValue,
+            opponentTeam: opoValue,
+            modality: modValue,
+            duration: duracao,
+            phase: fase,
+            location: local,
+            date: date
+        };
+
+        console.log('Game Data:', gameData);
+
+        // Send the data to the Flask backend using fetch
+        fetch('/api/jogos/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(gameData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response from server:', data);
+                // Optionally handle success/failure here (show a toast, reload table, etc.)
+            })
+            .catch(error => {
+                console.error('Error sending game data:', error);
+            });
+
+        // Close the modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('gameModal'));
+        loadGames()
         modal.hide();
     } else {
         form.reportValidity();
@@ -267,18 +399,28 @@ function renderGamesTable(columns, rows) {
     tableHeader.innerHTML = "";
     tableBody.innerHTML = "";
 
+    if (columns.length === 0 || rows.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="' + (columns.length + 1) + '" class="text-center">No games found.</td></tr>';
+        return;
+    }
+
+    // Render table headers
     columns.forEach(col => {
         const th = document.createElement("th");
         th.innerHTML = `<i class="fas fa-info-circle me-2"></i>${col}`;
         tableHeader.appendChild(th);
     });
 
+    // Add actions column header
     const actionsTh = document.createElement("th");
     actionsTh.innerHTML = '<i class="fas fa-cogs me-2"></i>Ações';
     tableHeader.appendChild(actionsTh);
 
+    // Render table rows
     rows.forEach(row => {
         const tr = document.createElement("tr");
+
+        // Render table cells
         row.forEach(cell => {
             const td = document.createElement("td");
             td.textContent = cell;
@@ -288,10 +430,16 @@ function renderGamesTable(columns, rows) {
         // Add Actions cell
         const actionsTd = document.createElement("td");
         actionsTd.innerHTML = `
-      <a href="#" class="view-game" data-id="${row[0]}" title="Ver Detalhes">
-        <i class="fas fa-eye"></i>
-      </a>
-    `;
+            <a href="#" class="view-game" data-id="${row[0]}" title="Ver Detalhes">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="#" class="edit-game" data-id="${row[0]}" title="Editar">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="#" class="delete-game" data-id="${row[0]}" title="Deletar">
+                <i class="fas fa-trash-alt"></i>
+            </a>
+        `;
         tr.appendChild(actionsTd);
 
         tableBody.appendChild(tr);
