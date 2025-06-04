@@ -196,3 +196,29 @@ BEGIN
     END CATCH
 END;
 
+CREATE OR ALTER TRIGGER trg_DeleteTeam
+ON FADU_EQUIPA
+AFTER DELETE
+AS
+BEGIN
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        DELETE FROM FADU_JOGO
+        WHERE Equipa_id1 = (SELECT Id FROM deleted) OR Equipa_id2 = (SELECT Id FROM deleted);
+        COMMIT TRANSACTION;
+        DELETE FROM FADU_EQUIPA
+        WHERE Id = (SELECT Id FROM deleted);
+        DELETE FROM FADU_ASSMODALIDADE
+        WHERE Ass_Id = (SELECT Ass_Id FROM deleted);
+        DELETE FROM FADU_PERSONEQUIPA
+        WHERE Equipa_id = (SELECT Id FROM deleted);
+        DELETE FROM FADU_PERSONMOD
+        WHERE Mod_Id = (SELECT Mod_Id FROM deleted);
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        PRINT 'Error occurred while updating tables on delet of a team.';
+        THROW;
+    END CATCH
+END;

@@ -18,6 +18,7 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', 'none')
 
 q = querrys()
 
+
 def get_connection():
 
     if (DB_USER == 'none'):
@@ -106,82 +107,82 @@ def get_table(table_name):
 
 @app.route('/Uni/')
 def get_uni():
-    querry =q.get_Unis()
+    querry = q.get_Unis()
     cols, serialized = getInfo(querry)
 
     return render_template('uni.html', title='Universidades', columns=cols, rows=serialized)
+
 
 @app.route('/Ass/')
 def get_ass():
     return render_template('ass.html', title='Associações')
 
 
-
 @app.route('/api/AssInfo')
 def get_Ass_Info():
-        page = request.args.get('page', 1, type=int)
-        per_page = 15
-        offset = (page - 1) * per_page
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+    offset = (page - 1) * per_page
 
-        filters = []
-        params = []
+    filters = []
+    params = []
 
-        # Filter: acc Name
-        acc_name = request.args.get('acc_name', '').strip()
-        if acc_name:
-            filters.append("ass.Name LIKE ?")
-            params.append(f"%{acc_name}%")
+    # Filter: acc Name
+    acc_name = request.args.get('acc_name', '').strip()
+    if acc_name:
+        filters.append("ass.Name LIKE ?")
+        params.append(f"%{acc_name}%")
 
-        # Filter: modalidade
-        modalidades = request.args.getlist('modalidade')
-        having_clause = ''
-        if modalidades:
-            having_clause = "HAVING " + " AND ".join([
-                "STRING_AGG(mod.Name, ', ') LIKE ?" for _ in modalidades
-            ])
-            params.extend([f"%{modalidade}%" for modalidade in modalidades])
+    # Filter: modalidade
+    modalidades = request.args.getlist('modalidade')
+    having_clause = ''
+    if modalidades:
+        having_clause = "HAVING " + " AND ".join([
+            "STRING_AGG(mod.Name, ', ') LIKE ?" for _ in modalidades
+        ])
+        params.extend([f"%{modalidade}%" for modalidade in modalidades])
 
-        # Sorting
-        sort_by = request.args.get('sort_by', '').strip()
-        sort_clause = "ORDER BY ass.Id"
-        if sort_by:
-            sort_map = {
-                "name_asc": "ass.Name ASC",
-                "name_desc": "ass.Name DESC",
-                "sigla_asc": "ass.Sigla ASC",
-                "sigla_desc": "ass.Sigla DESC",
-                "ouro_asc" : "Ouro ASC",
-                "ouro_desc" : "Ouro DESC",
-                "prata_asc": "Prata ASC",
-                "prata_desc": "Prata DESC",
-                "bronze_asc": "Bronze ASC",
-                "bronze_desc": "Bronze DESC"
-            }
-            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'ass.Id')}"
+    # Sorting
+    sort_by = request.args.get('sort_by', '').strip()
+    sort_clause = "ORDER BY ass.Id"
+    if sort_by:
+        sort_map = {
+            "name_asc": "ass.Name ASC",
+            "name_desc": "ass.Name DESC",
+            "sigla_asc": "ass.Sigla ASC",
+            "sigla_desc": "ass.Sigla DESC",
+            "ouro_asc": "Ouro ASC",
+            "ouro_desc": "Ouro DESC",
+            "prata_asc": "Prata ASC",
+            "prata_desc": "Prata DESC",
+            "bronze_asc": "Bronze ASC",
+            "bronze_desc": "Bronze DESC"
+        }
+        sort_clause = f"ORDER BY {sort_map.get(sort_by, 'ass.Id')}"
 
-        # Base query
-        query = q.get_Ass()
+    # Base query
+    query = q.get_Ass()
 
-        if filters:
-            query += " WHERE " + " AND ".join(filters)
+    if filters:
+        query += " WHERE " + " AND ".join(filters)
 
-        query += '''
+    query += '''
                 GROUP BY
                     ass.Id, ass.Name, ass.Sigla
         '''
-        if having_clause:
-            query += f" {having_clause}"
+    if having_clause:
+        query += f" {having_clause}"
 
-        query += f'''
+    query += f'''
         {sort_clause}
         OFFSET ? ROWS
         FETCH NEXT ? ROWS ONLY;
         '''
-        params_with_paging = params + [offset, per_page]
-        associations_cols, associations_data = getInfo(query, params_with_paging)
+    params_with_paging = params + [offset, per_page]
+    associations_cols, associations_data = getInfo(query, params_with_paging)
 
-        # Count query for pagination
-        count_query = '''
+    # Count query for pagination
+    count_query = '''
         SELECT COUNT(*) 
         FROM 
             FADU_ASSOCIAÇAO_ACADEMICA ass
@@ -190,36 +191,37 @@ def get_Ass_Info():
         LEFT JOIN
             FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
         '''
-        if filters:
-            count_query += " WHERE " + " AND ".join(filters)
-        count_query += " GROUP BY ass.Id, ass.Name, ass.Sigla"
-        if having_clause:
-            count_query += f" {having_clause}"
-        count_cols, count_data = getInfo(count_query, params)
-        total_ass = len(count_data) if count_data else 0
-        total_pages = math.ceil(total_ass / per_page)
+    if filters:
+        count_query += " WHERE " + " AND ".join(filters)
+    count_query += " GROUP BY ass.Id, ass.Name, ass.Sigla"
+    if having_clause:
+        count_query += f" {having_clause}"
+    count_cols, count_data = getInfo(count_query, params)
+    total_ass = len(count_data) if count_data else 0
+    total_pages = math.ceil(total_ass / per_page)
 
-        response = {
-            'columns': associations_cols,
-            'rows': associations_data,
-            'total_ass': total_ass,
-            'total_pages': total_pages,
-            'current_page': page
-        }
-        return jsonify(response)
+    response = {
+        'columns': associations_cols,
+        'rows': associations_data,
+        'total_ass': total_ass,
+        'total_pages': total_pages,
+        'current_page': page
+    }
+    return jsonify(response)
 
 
 @app.route('/Jogos/')
 def get_Jogos():
     return render_template('jogos.html', title='Jogos')
 
+
 @app.route('/api/jogos/')
 def get_jogos():
     page = request.args.get('page', 1, type=int)
     per_page = 15
     offset = (page - 1) * per_page
-    querry =q.get_Jogos()
-    cols, serialized = getInfo(querry,[offset,per_page])
+    querry = q.get_Jogos()
+    cols, serialized = getInfo(querry, [offset, per_page])
     return jsonify({'columns': cols, 'rows': serialized})
 
 
@@ -271,11 +273,14 @@ def get_Ass_Id(AssId):
     query = q.get_Ass_Details()
 
     # Query for medals
-    medals_query = q.get_Ass_Med() 
+    teams_query = q.get_Ass_Teams()
+    medals_query = q.get_Ass_Med()
     # Queries for athletes, coaches, and referees
     # Execute the queries and get the results
     cols, association_data = getInfo(query, (AssId,))
     medals_cols, medals_data = getInfo(medals_query, (AssId,))
+    teams_cols, teams_data = getInfo(teams_query, (AssId,))
+
     # Association name (use the first row, which should contain the association name)
     assName = association_data[0][1] if association_data else "Associação desconhecida"
 
@@ -285,7 +290,9 @@ def get_Ass_Id(AssId):
                            columns=cols,
                            rows=association_data,
                            medals_columns=medals_cols,
-                           medals_rows=medals_data,)
+                           medals_rows=medals_data,
+                           teams_cols=teams_cols,
+                           teams_rows=teams_data)
 
 
 def callUserPro(query, params=None):
@@ -314,7 +321,8 @@ def get_uni_accId(assId):
     query = '''SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL OR Ass_id = ?'''
     uni_cols, uni_data = getInfo(query, assId)
     return jsonify({'columns': uni_cols, 'rows': uni_data})
-    
+
+
 @app.route('/api/uniNullAss', methods=['GET'])
 def get_uni_null_ass():
     query = '''SELECT Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL'''
@@ -377,12 +385,6 @@ def search_athletes():
     return jsonify(response)
 
 
-
-
-
-
-
-
 @app.route('/api/associacoes', methods=['GET', 'POST'])
 def api_get_associacoes():
     if request.method == 'POST':
@@ -396,9 +398,11 @@ def api_get_associacoes():
             # Directly insert the new association
             cnxn = get_connection()
             cursor = cnxn.cursor()
-            cursor.execute("INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
+            cursor.execute(
+                "INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
             cnxn.commit()
-            cursor.execute('SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
+            cursor.execute(
+                'SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
             row = cursor.fetchone()
             new_ass_id = row[0] if row else None
             cursor.close()
@@ -408,7 +412,8 @@ def api_get_associacoes():
                 for university_name in universities:
                     cnxn = get_connection()
                     cursor = cnxn.cursor()
-                    cursor.execute('UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
+                    cursor.execute(
+                        'UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
                     cnxn.commit()
                     cursor.close()
                     cnxn.close()
@@ -427,7 +432,8 @@ def api_delete_ass(ass):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        cursor.execute("DELETE FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Id = ?", (ass,))
+        cursor.execute(
+            "DELETE FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Id = ?", (ass,))
         cnxn.commit()
         cursor.close()
         cnxn.close()
@@ -435,17 +441,18 @@ def api_delete_ass(ass):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+
 @app.route('/api/associacoes/<ass>', methods=['PUT'])
 def api_update_ass(ass):
     try:
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        
+
         # Get the updated data from the request
         assName = request.form.get('assName')
         assSigla = request.form.get('assSigla')
         universities = json.loads(request.form.get('universities', '[]'))
-        
+
         # Update the association
         cursor.execute(
             "UPDATE FADU_ASSOCIAÇAO_ACADEMICA SET Name = ?, Sigla = ? WHERE Id = ?",
@@ -509,12 +516,12 @@ def search_ass():
     return jsonify(response)
 
 
-
 @app.route('/api/modalidades', methods=['GET'])
 def api_get_modalidades():
     modalidades_query = "SELECT Id, Name  from FADU_MODALIDADE"
     modalidades_cols, modalidades_data = getInfo(modalidades_query)
     return jsonify({'columns': modalidades_cols, 'rows': modalidades_data})
+
 
 @app.route('/api/ass/<int:ass_id>/modalidades', methods=['GET'])
 def api_get_ass_modalidades(ass_id):
@@ -527,32 +534,34 @@ def api_get_ass_modalidades(ass_id):
     cols, data = getInfo(query, (ass_id,))
     return jsonify({'columns': cols, 'rows': data})
 
+
 @app.route('/api/ass/<int:ass_id>/modalidades', methods=['PUT'])
 def api_update_ass_modalidades(ass_id):
     try:
         data = request.get_json()
         modalidades = data.get('modalidades', [])
-        
+
         cnxn = get_connection()
         cursor = cnxn.cursor()
-        
+
         # First, get current modalidades
-        cursor.execute("SELECT Mod_Id FROM FADU_ASSMODALIDADE WHERE Ass_Id = ?", (ass_id,))
+        cursor.execute(
+            "SELECT Mod_Id FROM FADU_ASSMODALIDADE WHERE Ass_Id = ?", (ass_id,))
         current_modalidades = [row[0] for row in cursor.fetchall()]
-        
+
         # Get the IDs for the new modalidades
         cursor.execute("SELECT Id, Name FROM FADU_MODALIDADE WHERE Name IN ({})".format(
             ','.join(['?'] * len(modalidades))), modalidades)
         new_modalidades = {row[1]: row[0] for row in cursor.fetchall()}
-        
+
         # Delete modalidades that are no longer selected
         cursor.execute("""
             DELETE FROM FADU_ASSMODALIDADE 
             WHERE Ass_Id = ? 
             AND Mod_Id NOT IN ({})
-        """.format(','.join(['?'] * len(new_modalidades.values()))), 
-        [ass_id] + list(new_modalidades.values()))
-        
+        """.format(','.join(['?'] * len(new_modalidades.values()))),
+            [ass_id] + list(new_modalidades.values()))
+
         # Insert new modalidades that weren't already there
         for modalidade_name, modalidade_id in new_modalidades.items():
             cursor.execute("""
@@ -565,11 +574,11 @@ def api_update_ass_modalidades(ass_id):
                     VALUES (?, ?)
                 END
             """, (ass_id, modalidade_id, ass_id, modalidade_id))
-        
+
         cnxn.commit()
         cursor.close()
         cnxn.close()
-        
+
         return jsonify({"status": "success"})
     except Exception as e:
         print(f"Error updating modalidades: {e}")  # Add logging
@@ -628,11 +637,10 @@ def update_athlete(athlete_id):
 
 
 @app.route('/api/AssInscritos/<type>/<ass_id>', methods=['GET'])
-def get_Ass_Inscritos_Type(type,ass_id):
+def get_Ass_Inscritos_Type(type, ass_id):
     querry = q.get_Ass_Insc(str(type))
-    cols, rows = getInfo(querry,[ass_id])
+    cols, rows = getInfo(querry, [ass_id])
     return jsonify({'columns': cols, 'rows': rows})
-
 
 
 @app.route('/api/athlete/<int:athlete_id>', methods=['GET'])
@@ -662,12 +670,11 @@ def get_athlete_details(athlete_id):
         _, rowsCheck = getInfo('''
                          SELECT *  FROM dbo.FADU_TREINADOR WHERE Person_id = ?
                          ''', (athlete_id,))
-        if(rowsCheck):
-            type ="coach"
+        if (rowsCheck):
+            type = "coach"
         else:
-            type="refere"
-    
-    
+            type = "refere"
+
     if rows:
         row = rows[0]
         # Get modalidades for this athlete
@@ -677,8 +684,9 @@ def get_athlete_details(athlete_id):
         JOIN FADU_PERSONMOD pm ON m.Id = pm.Mod_Id
         WHERE pm.Person_id = ?
         """
-        modalidades_cols, modalidades_rows = getInfo(modalidades_query, (athlete_id,))
-        
+        modalidades_cols, modalidades_rows = getInfo(
+            modalidades_query, (athlete_id,))
+
         athlete = {
             'id': row[0],
             'name': row[1],
@@ -701,16 +709,16 @@ def api_update_athlete_modalidades(athlete_id):
     try:
         data = request.get_json()
         modalidades = data.get('modalidades', [])
-        
+
         # Convert modalidades list to comma-separated string of IDs
         modalidades_ids = ','.join(str(m['id']) for m in modalidades)
-        
+
         # Call the stored procedure
         callUserProcedure = '''
             EXEC dbo.updateAthleteModalidades ?, ?;
         '''
         callUserPro(callUserProcedure, [athlete_id, modalidades_ids])
-        
+
         return jsonify({"status": "success"})
     except Exception as e:
         print(f"Error updating athlete modalidades: {e}")
@@ -728,26 +736,26 @@ def api_add_athlete():
         ass_id = request.form.get('athleteAssId', '').strip()
         modalidadesIds = request.form.get('modalidadesIds', '').strip()
         selectedType = request.form.get('selectedType', '').strip()
-        if (selectedType==0):
+        if (selectedType == 0):
             callUserProcessure = '''
             DECLARE @NewPersonId INT;
             EXEC dbo.addAthlete ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
             SELECT @NewPersonId;
             '''
-        elif(selectedType ==1):
+        elif (selectedType == 1):
             callUserProcessure = '''
             DECLARE @NewPersonId INT;
             EXEC dbo.addTreinador ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
             SELECT @NewPersonId;
             '''
-        elif(selectedType ==2):
+        elif (selectedType == 2):
             callUserProcessure = '''
             DECLARE @NewPersonId INT;
             EXEC dbo.addArbitro ?, ?, ?, ?, ?, ?,?, @NewPersonId OUTPUT;
             SELECT @NewPersonId;
             '''
         callUserPro(callUserProcessure, [
-                    nome, numero_cc, date_birth, email, phone, ass_id,modalidadesIds])
+                    nome, numero_cc, date_birth, email, phone, ass_id, modalidadesIds])
         return jsonify({'status': 'success'})
     else:
         page = request.args.get('page', 1, type=int)
@@ -768,7 +776,6 @@ def api_add_athlete():
         if phone_number:
             filters.append("Phone LIKE ?")
             params.append(f"%{phone_number}%")
-
 
         # Filter: Age
         age = request.args.get('age', '').strip()
@@ -852,42 +859,41 @@ def api_add_athlete():
 
 @app.route('/api/ass/<int:ass_id>/medalhas', methods=['POST', 'DELETE'])
 def api_manage_medalhas(ass_id):
-        
-        if request.method == 'POST':
-            data = request.get_json()
-            modalidade = data.get('modalidade')
-            tipo_medalha = data.get('tipoMedalha')
-            ano = data.get('ano')
-            print(ano,tipo_medalha,modalidade)
 
-            rows,s= getInfo(("SELECT Id FROM FADU_TIPOMEDALHA WHERE Type = ?", tipo_medalha))
-            tipo_medalha_id=s[0]
-            # Insert the medal
-            uery = ("""
+    if request.method == 'POST':
+        data = request.get_json()
+        modalidade = data.get('modalidade')
+        tipo_medalha = data.get('tipoMedalha')
+        ano = data.get('ano')
+        print(ano, tipo_medalha, modalidade)
+
+        rows, s = getInfo(
+            ("SELECT Id FROM FADU_TIPOMEDALHA WHERE Type = ?", tipo_medalha))
+        tipo_medalha_id = s[0]
+        # Insert the medal
+        uery = ("""
                 INSERT INTO FADU_MEDALHAS (Ass_Id, Mod_Id, TypeMedal_Id, Year)
                 VALUES (?, ?, ?, ?)
-            """, (ass_id, modalidade,tipo_medalha_id, ano))
-            
-            return jsonify({"status": "success"})
-            
-        elif request.method == 'DELETE':
-            data = request.get_json()
-            modalidade = data.get('modalidade')
-            tipo_medalha = data.get('tipoMedalha')
-            ano = data.get('ano')
-            print(ano,tipo_medalha,modalidade)
-            
-            # Get the modalidade ID
-  
-            # Delete the medal
-            callUserPro("""
+            """, (ass_id, modalidade, tipo_medalha_id, ano))
+
+        return jsonify({"status": "success"})
+
+    elif request.method == 'DELETE':
+        data = request.get_json()
+        modalidade = data.get('modalidade')
+        tipo_medalha = data.get('tipoMedalha')
+        ano = data.get('ano')
+        print(ano, tipo_medalha, modalidade)
+
+        # Get the modalidade ID
+
+        # Delete the medal
+        callUserPro("""
                 DELETE FROM FADU_MEDALHAS 
                 WHERE Ass_Id = ? AND Mod_Id = ? AND Year = ?
             """, (ass_id, modalidade, ano))
-            
-            return jsonify({"status": "success"})
-            
 
+        return jsonify({"status": "success"})
 
 
 @app.route('/inscritos/<int:inscrito_id>')
@@ -934,7 +940,8 @@ def inscrito_details(inscrito_id):
         JOIN FADU_ATLETA_MODALIDADE am ON m.Id = am.Modalidade_Id
         WHERE am.Athlete_Id = ?
         '''
-        modalidades_cols, modalidades_data = getInfo(modalidades_query, [inscrito_id])
+        modalidades_cols, modalidades_data = getInfo(
+            modalidades_query, [inscrito_id])
         modalidades = modalidades_data
 
     elif inscrito[7] == 'Coach':
@@ -966,14 +973,15 @@ def inscrito_details(inscrito_id):
         WHERE 
             ac.Arbitro_Id = ?
         '''
-        competitions_cols, competitions_data = getInfo(competitions_query, [inscrito_id])
+        competitions_cols, competitions_data = getInfo(
+            competitions_query, [inscrito_id])
         competitions = competitions_data
 
-    return render_template('inscrito_details.html', 
-                         inscrito=inscrito,
-                         modalidades=modalidades,
-                         athletes=athletes,
-                         competitions=competitions)
+    return render_template('inscrito_details.html',
+                           inscrito=inscrito,
+                           modalidades=modalidades,
+                           athletes=athletes,
+                           competitions=competitions)
 
 
 @app.route('/api/inscritos/edit', methods=['POST'])
@@ -1008,7 +1016,8 @@ def api_edit_inscrito():
     SET Name = ?, NumeroCC = ?, DateBirth = ?, Email = ?, Phone = ?, Ass_Id = ?
     WHERE Id = ?
     '''
-    callUserPro(update_person_query, [name, numero_cc, date_birth, email, phone, ass_id, inscrito_id])
+    callUserPro(update_person_query, [
+                name, numero_cc, date_birth, email, phone, ass_id, inscrito_id])
 
     # Handle type-specific updates
     if inscrito_type == 'Athlete' and modalidadesIds:
@@ -1103,6 +1112,15 @@ def api_delete_inscrito(inscrito_id):
 
     return jsonify({'status': 'success'})
 
+
+@app.route('/api/ass/<int:assId>/teams', methods=['DELETE'])
+def api_ass_teams(assId):
+    deleteq = '''
+        DELETE FROM FADU_EQUIPA
+        WHERE Id = ?        
+        '''
+    callUserPro(deleteq, assId)
+    return jsonify({'status': 'success'})
 
 
 if __name__ == '__main__':

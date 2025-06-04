@@ -228,11 +228,55 @@
                   <td>{{ medal[1] }}</td>
                   <td>{{ medal[2] }}</td>
                   <td>
-                    <a href="#" class="delete-medal" 
+                    <a href="#" class="delete-team" 
                        data-medal-id="{{ medal[0] }}" 
                        data-ass-id="{{ rows[0][0] }}"
                        data-modalidade="{{ medal[2] }}"
                        data-ano="{{ medal[1] }}"
+                       title="Delete">
+                      <i class="fas fa-trash-alt"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="details-section">
+          <div class="details-section-title">
+            <i class="fas fa-medal"></i>
+            Equipas
+          </div>
+          <div class="table-responsive">
+            <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#addMedalModal">
+              <i class="fas fa-plus"></i> Adicionar Equipa
+            </button>
+            <table class="table medals-table mb-0">
+              <thead>
+                  <th style="width: 40%"><i class="fas fa-medal mr-2"></i>Team ID</th>
+                  <th><i class="fas fa-calendar mr-2"></i>Modalidade</th>
+                  <th><i class="fas fa-calendar mr-2"></i>MaxPlayers</th>
+                  <th><i class="fas fa-calendar mr-2"></i>CurrentPlayers</th>
+                  <th><i class="fas fa-calendar mr-2"></i>Players</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for team in teams_rows %}
+                <tr>
+                  <td>{{ team[0] }}</td>
+                  <td>{{ team[1] }}</td>
+                  <td>{{ team[2] }}</td>
+                  <td>{{ team[3] }}</td>
+                  <td>{{ team[4] }}</td>
+                  
+                  <td>
+                    <a href="#" class="delete-team"
+                       data-team-id="{{ team[0] }}"
+                       data-modalidade="{{ team[1] }}"
+                       data-ano="{{ team[2] }}"
                        title="Delete">
                       <i class="fas fa-trash-alt"></i>
                     </a>

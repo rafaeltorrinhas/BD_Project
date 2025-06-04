@@ -227,3 +227,26 @@ class querrys:
             WHERE
                 ass.Name LIKE ?
         '''
+    def get_Ass_Teams(self):
+        return '''
+        SELECT 
+            e.Id AS TeamId,
+            m.Name AS Modalidade,
+            m.MaxPlayers AS MaxPlayers,
+            COUNT(pe.Person_Id) AS CurrentPlayers,
+            STRING_AGG(p.Name, ', ') AS Players
+        FROM 
+            FADU_EQUIPA e
+        JOIN 
+            FADU_MODALIDADE m ON e.Mod_Id = m.Id
+        LEFT JOIN 
+            FADU_PERSONEQUIPA pe ON e.Id = pe.EQUIPA_Id
+        LEFT JOIN 
+            FADU_PERSON p ON pe.Person_Id = p.Id
+        WHERE 
+            e.Ass_id = ?
+        GROUP BY 
+            e.Id, m.Name, m.MaxPlayers
+        ORDER BY 
+            m.Name;
+        '''
