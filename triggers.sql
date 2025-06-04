@@ -1,7 +1,3 @@
-
-
-
-
 CREATE TRIGGER trg_DELETEMEDALS
 ON FADU_MEDALHAS
 INSTEAD OF DELETE
@@ -198,24 +194,20 @@ END;
 
 CREATE OR ALTER TRIGGER trg_DeleteTeam
 ON FADU_EQUIPA
-AFTER DELETE
+INSTEAD OF DELETE
 AS
 BEGIN
     BEGIN TRANSACTION;
     BEGIN TRY
+        -- First delete all player relationships
+        DELETE FROM FADU_PERSONEQUIPA
+        WHERE EQUIPA_Id IN (SELECT Id FROM deleted);
         
+        -- Then delete all games
         DELETE FROM FADU_JOGO
         WHERE Equipa_id1 IN (SELECT Id FROM deleted) OR Equipa_id2 IN (SELECT Id FROM deleted);
         
-        DELETE FROM FADU_PERSONEQUIPA
-        WHERE Equipa_id IN (SELECT Id FROM deleted);
-
-        DELETE FROM FADU_PERSONMOD
-        WHERE Mod_Id IN (SELECT Mod_Id FROM deleted);
-
-        DELETE FROM FADU_ASSMODALIDADE
-        WHERE Ass_Id IN (SELECT Ass_Id FROM deleted);
-
+        -- Finally delete the team
         DELETE FROM FADU_EQUIPA
         WHERE Id IN (SELECT Id FROM deleted);
 
