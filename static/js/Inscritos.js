@@ -181,7 +181,18 @@ function handleAddAthlete(event) {
         alert("Please select at least one sports modalidade.");
         return false;
     }
-    const selectedType = document.querySelector('input[name="athleteType"]:checked');
+    var radios = document.getElementsByName("athleteType");
+
+    // Itera pelos botões de rádio para verificar qual está selecionado
+    for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+            var selectedType = radios[i].value;  // Obtém o valor do botão selecionado
+            console.log("Valor selecionado: " + selectedType);
+            break;  // Sai do loop após encontrar o selecionado
+        }
+    }
+
+
     const payload = new URLSearchParams({
         athleteName: document.getElementById("athleteName").value,
         athleteNumeroCC: document.getElementById("athleteNumeroCC").value,
@@ -489,7 +500,6 @@ function loadModalidades() {
 
                 // Add selected count display
                 select.addEventListener("change", function () {
-                    updateSelectedCount(this);
                 });
             }
         })
