@@ -213,6 +213,58 @@ def get_Ass_Info():
 def get_Jogos():
     return render_template('jogos.html', title='Jogos')
 
+@app.route('/api/jogo/<Id>' , methods=['DELETE','GET','PUT'])
+def get_jogos_id(Id):
+        if request.method == 'GET':
+            querry='''SELECT * FROM FADU_JOGO WHERE Id=?'''
+            cols, serialized = getInfo(querry,[Id])
+            return jsonify({'columns': cols, 'rows': serialized})
+        elif request.method == 'PUT':
+            
+            data = request.get_json()
+            
+            required_fields = ['hostTeam', 'opponentTeam', 'modality', 'date']
+            for field in required_fields:
+                if not data.get(field):
+                    return jsonify({'error': f'Missing required field: {field}'}), 400
+            
+            # Extract data from request
+            host_team = data.get('hostTeam')
+            opponent_team = data.get('opponentTeam')
+            modality = data.get('modality')
+            duration = data.get('duration', '00:00')  # Default duration if not provided
+            phase = data.get('phase')
+            location = data.get('location', '')
+            date = data.get('date')
+            result = data.get('result', '')  # Game result (score)
+            
+            # Validate that host and opponent teams are different
+            if host_team == opponent_team:
+                return jsonify({'error': 'Host team and opponent team cannot be the same'}), 400
+            
+            # Update query - adjust column names to match your database schema
+            update_query = q.put_jogo()
+            
+            # Parameters for the update query
+            params = [
+                date,
+                duration,
+                result,
+                location,
+                phase if phase else None,  # Allow null for phase
+                modality,
+                host_team,
+                opponent_team,
+                Id
+            ]
+            print(update_query)
+            print(params)
+            callUserPro(update_query,params)
+            return jsonify({'status': 'success'})
+        elif request.method == 'DELETE':
+            callUserPro("DELETE FROM FADU_JOGO WHERE Id=?",[Id])
+            return jsonify({'status': 'success'})
+
 @app.route('/api/jogos/' , methods=['POST','GET'])
 def get_jogos():
     if request.method == 'GET':

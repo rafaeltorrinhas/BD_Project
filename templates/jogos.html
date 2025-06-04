@@ -274,7 +274,7 @@
             <div class="modal-content border-0 shadow-lg">
               <!-- Modal Header -->
               <div class="modal-header bg-gradient bg-warning text-white border-0 py-3">
-                <h4 class="modal-title fw-bold" id="editGameModalLabel"><i class="fas fa-edit me-3"></i> Editar Jogo</h4>
+                <h4 class="modal-title fw-bold" id="editGameModalLabel"><i class="fas fa-edit me-3"></i> Editar Jogo <span id="editGameId"></span></h4>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
 
@@ -326,7 +326,7 @@
                       <!-- VS Divider -->
                       <div class="col-md-2 d-flex align-items-end justify-content-center">
                         <div class="text-center mb-3">
-                          <span class="badge bg-secondary fs-4 px-3 py-2 rounded-pill">VS</span>
+                          <input type="text" id="editRes" class="form-control form-control-lg" placeholder="Resultado do Jogo" />
                         </div>
                       </div>
 
@@ -357,6 +357,12 @@
                       <div class="col-md-6">
                         <label for="editDuration" class="form-label fw-semibold text-dark"><i class="fas fa-clock text-warning me-2"></i>Duração do Jogo em minutos</label>
                         <input type="number" step="1" min="0" class="form-control form-control-lg border-2" id="editDuration" placeholder="ex: 90" />
+                      </div>
+
+                      <!-- Date Input -->
+                      <div class="col-md-6">
+                        <label for="editDate" class="form-label fw-semibold text-dark"><i class="fas fa-calendar-alt text-info me-2"></i>Data do Jogo</label>
+                        <input type="date" class="form-control form-control-lg border-2" id="editDate" />
                       </div>
                     </div>
 
