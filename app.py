@@ -214,66 +214,69 @@ def get_Ass_Info():
 def get_Jogos():
     return render_template('jogos.html', title='Jogos')
 
-@app.route('/api/jogo/<Id>' , methods=['DELETE','GET','PUT'])
-def get_jogos_id(Id):
-        if request.method == 'GET':
-            querry='''SELECT * FROM FADU_JOGO WHERE Id=?'''
-            cols, serialized = getInfo(querry,[Id])
-            return jsonify({'columns': cols, 'rows': serialized})
-        elif request.method == 'PUT':
-            
-            data = request.get_json()
-            
-            required_fields = ['hostTeam', 'opponentTeam', 'modality', 'date']
-            for field in required_fields:
-                if not data.get(field):
-                    return jsonify({'error': f'Missing required field: {field}'}), 400
-            
-            # Extract data from request
-            host_team = data.get('hostTeam')
-            opponent_team = data.get('opponentTeam')
-            modality = data.get('modality')
-            duration = data.get('duration', '00:00')  # Default duration if not provided
-            phase = data.get('phase')
-            location = data.get('location', '')
-            date = data.get('date')
-            result = data.get('result', '')  # Game result (score)
-            
-            # Validate that host and opponent teams are different
-            if host_team == opponent_team:
-                return jsonify({'error': 'Host team and opponent team cannot be the same'}), 400
-            
-            # Update query - adjust column names to match your database schema
-            update_query = q.put_jogo()
-            
-            # Parameters for the update query
-            params = [
-                date,
-                duration,
-                result,
-                location,
-                phase if phase else None,  # Allow null for phase
-                modality,
-                host_team,
-                opponent_team,
-                Id
-            ]
-            print(update_query)
-            print(params)
-            callUserPro(update_query,params)
-            return jsonify({'status': 'success'})
-        elif request.method == 'DELETE':
-            callUserPro("DELETE FROM FADU_JOGO WHERE Id=?",[Id])
-            return jsonify({'status': 'success'})
 
-@app.route('/api/jogos/' , methods=['POST','GET'])
+@app.route('/api/jogo/<Id>', methods=['DELETE', 'GET', 'PUT'])
+def get_jogos_id(Id):
+    if request.method == 'GET':
+        querry = '''SELECT * FROM FADU_JOGO WHERE Id=?'''
+        cols, serialized = getInfo(querry, [Id])
+        return jsonify({'columns': cols, 'rows': serialized})
+    elif request.method == 'PUT':
+
+        data = request.get_json()
+
+        required_fields = ['hostTeam', 'opponentTeam', 'modality', 'date']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+
+        # Extract data from request
+        host_team = data.get('hostTeam')
+        opponent_team = data.get('opponentTeam')
+        modality = data.get('modality')
+        # Default duration if not provided
+        duration = data.get('duration', '00:00')
+        phase = data.get('phase')
+        location = data.get('location', '')
+        date = data.get('date')
+        result = data.get('result', '')  # Game result (score)
+
+        # Validate that host and opponent teams are different
+        if host_team == opponent_team:
+            return jsonify({'error': 'Host team and opponent team cannot be the same'}), 400
+
+        # Update query - adjust column names to match your database schema
+        update_query = q.put_jogo()
+
+        # Parameters for the update query
+        params = [
+            date,
+            duration,
+            result,
+            location,
+            phase if phase else None,  # Allow null for phase
+            modality,
+            host_team,
+            opponent_team,
+            Id
+        ]
+        print(update_query)
+        print(params)
+        callUserPro(update_query, params)
+        return jsonify({'status': 'success'})
+    elif request.method == 'DELETE':
+        callUserPro("DELETE FROM FADU_JOGO WHERE Id=?", [Id])
+        return jsonify({'status': 'success'})
+
+
+@app.route('/api/jogos/', methods=['POST', 'GET'])
 def get_jogos():
     if request.method == 'GET':
         page = request.args.get('page', 1, type=int)
         per_page = 15
         offset = (page - 1) * per_page
-        querry =q.get_Jogos()
-        cols, serialized = getInfo(querry,[offset,per_page])
+        querry = q.get_Jogos()
+        cols, serialized = getInfo(querry, [offset, per_page])
         return jsonify({'columns': cols, 'rows': serialized})
     else:
         data = request.get_json()
@@ -285,12 +288,10 @@ def get_jogos():
         phase = data.get('phase')
         location = data.get('location')
         date = data.get('date')
-        querry=q.post_jogo()
-        callUserPro(querry,[date,duration,location,phase,modality,host_team,opponent_team])
+        querry = q.post_jogo()
+        callUserPro(querry, [date, duration, location,
+                    phase, modality, host_team, opponent_team])
         return jsonify({'status': 'success'})
-        
-        
-        
 
 
 @app.route('/Jogos/<GameId>')
@@ -334,14 +335,12 @@ def get_fases():
     return jsonify({'columns': cols, 'rows': serialized})
 
 
-
-
 @app.route("/api/teams/<modId>")
 def get_team_mod(modId):
     query = q.get_team_modId()
-    cols, serialized = getInfo(query,[modId])
+    cols, serialized = getInfo(query, [modId])
     return jsonify({'columns': cols, 'rows': serialized})
-    
+
 
 @app.route('/Fases/<FaseId>')
 def get_Fases_Id(FaseId):
@@ -483,15 +482,18 @@ def api_get_associacoes():
                 return jsonify({'status': 'error', 'message': 'No universities selected'})
             # Directly insert the new association
 
-            callUserPro("INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
-            coluns,row=getInfo('SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
+            callUserPro(
+                "INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
+            coluns, row = getInfo(
+                'SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
             new_ass_id = row[0] if row else None
 
             # Assign the new association to all selected universities by name
             if new_ass_id:
                 for university_name in universities:
 
-                    callUserPro('UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
+                    callUserPro(
+                        'UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
 
             return jsonify({'status': 'success'})
         except Exception as e:
@@ -517,7 +519,6 @@ def api_delete_ass(ass):
 def api_update_ass(ass):
     try:
 
-        
         # Get the updated data from the request
         assName = request.form.get('assName')
         assSigla = request.form.get('assSigla')
@@ -542,7 +543,6 @@ def api_update_ass(ass):
                     "UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Id = ?",
                     [ass, int(university_id)]
                 )
-
 
         return jsonify({"status": "success"})
     except Exception as e:
@@ -1181,15 +1181,61 @@ def api_delete_inscrito(inscrito_id):
     return jsonify({'status': 'success'})
 
 
-@app.route('/api/ass/<int:assId>/teams', methods=['DELETE'])
+@app.route('/api/ass/<int:assId>/teams', methods=['POST', 'DELETE'])
 def api_ass_teams(assId):
-    deleteq = '''
-        DELETE FROM FADU_EQUIPA
-        WHERE Id = ?        
-        '''
-    callUserPro(deleteq, assId)
-    return jsonify({'status': 'success'})
+    if request.method == 'DELETE':
+        try:
+            print(f"Attempting to delete team with ID: {assId}")  # Debug log
+            
+            # Let the trigger handle all the deletion logic
+            callUserPro('''
+                DELETE FROM FADU_EQUIPA
+                WHERE Id = ?
+            ''', [assId])
+            
+            return jsonify({'status': 'success'})
+        except Exception as e:
+            print(f"Error deleting team: {e}")
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+    else:  
+        try:
+            data = request.get_json()
+            modalidade = data.get('modalidade')
+            players = data.get('players', [])
+
+            if not modalidade:
+                return jsonify({'status': 'error', 'message': 'Modalidade é obrigatória'}), 400
+
+            # First create the team
+            insertq = '''
+                INSERT INTO FADU_EQUIPA (Ass_Id, Mod_Id)
+                OUTPUT INSERTED.Id
+                VALUES (?, ?)
+            '''
+            cnxn = get_connection()
+            cursor = cnxn.cursor()
+            cursor.execute(insertq, [assId, modalidade])
+            team_id = cursor.fetchone()[0]
+
+            # Then add players to the team
+            if players:
+                for player_id in players:
+                    cursor.execute('''
+                        INSERT INTO FADU_PERSONEQUIPA (Person_Id, EQUIPA_Id)
+                        VALUES (?, ?)
+                    ''', [player_id, team_id])
+
+            cnxn.commit()
+            cursor.close()
+            cnxn.close()
+
+            return jsonify({'status': 'success'})
+        except Exception as e:
+            print(f"Error creating team: {e}")  # Add debug logging
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+

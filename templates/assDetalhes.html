@@ -250,7 +250,7 @@
             Equipas
           </div>
           <div class="table-responsive">
-            <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#addMedalModal">
+            <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#addTeamModal">
               <i class="fas fa-plus"></i> Adicionar Equipa
             </button>
             <table class="table medals-table mb-0">
@@ -356,6 +356,49 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary" id="saveMedal">
+              <i class="fas fa-save"></i> Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Team Modal -->
+    <div class="modal fade" id="addTeamModal" tabindex="-1" role="dialog" aria-labelledby="addTeamModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addTeamModalLabel">Adicionar Equipa</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="addTeamForm">
+              <input type="hidden" id="assId" value="{{ rows[0][0] }}">
+              <div class="form-group">
+                <label for="teamModalidade">Modalidade</label>
+                <select class="form-control" id="teamModalidade" name="modalidade" required>
+                  <option value="">Selecione uma modalidade</option>
+                  {% for modalidade in rows[0][3].split(', ') %}
+                    {% if modalidade %}
+                      {% set parts = modalidade.split(':') %}
+                      <option value="{{ parts[0] }}">{{ parts[1] }}</option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="teamPlayers">Jogadores</label>
+                <select class="form-control" id="teamPlayers" name="players" multiple>
+                  <option value="">Selecione os jogadores</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="saveTeam">
               <i class="fas fa-save"></i> Guardar
             </button>
           </div>

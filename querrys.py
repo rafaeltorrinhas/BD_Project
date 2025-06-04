@@ -6,10 +6,15 @@ class querrys:
         type =str(type) 
         print(type)
         return f'''
-            SELECT * FROM FADU_PERSON
-            JOIN FADU_{type.upper()} as type on type.Person_Id =id 
-            WHERE Ass_id = ?
-            '''    
+                SELECT p.Id, p.Name, STRING_AGG(m.Name, ', ') as Modalidades
+                FROM FADU_PERSON p
+                JOIN FADU_ATLETA as type on type.Person_Id = p.id 
+                LEFT JOIN FADU_PERSONMOD pm ON p.Id = pm.Person_id
+                LEFT JOIN FADU_MODALIDADE m ON pm.Mod_Id = m.Id
+                WHERE p.Ass_id = ?
+                GROUP BY p.Id, p.Name
+                '''
+
     def get_Fase_Info(self):
        return '''
             select fase.Id as Id ,
@@ -194,16 +199,17 @@ class querrys:
         ass.Id AS Id,
         ass.Name AS Nome,
         ass.Sigla AS Sigla,
-        STRING_AGG(mod.Name, ', ') AS Modalidades
+        STRING_AGG(CONCAT(mod.Id, ':', mod.Name), ', ') AS Modalidades
     FROM
         FADU_ASSOCIAÇAO_ACADEMICA ass
     LEFT JOIN
-        FADU_ASSMODALIDADE am ON ass.Id = am.Ass_Id
+        FADU_ASSMODALIDADE ma ON ass.Id = ma.Ass_Id
     LEFT JOIN
-        FADU_MODALIDADE mod ON am.Mod_Id = mod.Id
-    WHERE ass.Id = ?
+        FADU_MODALIDADE mod ON ma.Mod_Id = mod.Id
+    WHERE
+        ass.Id = ?
     GROUP BY
-        ass.Id, ass.Name, ass.Sigla;
+        ass.Id, ass.Name, ass.Sigla
     '''
     def get_Ass_Med(self):
         return f'''
