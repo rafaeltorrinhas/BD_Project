@@ -481,24 +481,17 @@ def api_get_associacoes():
             if not universities:
                 return jsonify({'status': 'error', 'message': 'No universities selected'})
             # Directly insert the new association
-            cnxn = get_connection()
-            cursor = cnxn.cursor()
-            cursor.execute("INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
-            cnxn.commit()
-            cursor.execute('SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
-            row = cursor.fetchone()
+
+            callUserPro("INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
+            coluns,row=getInfo('SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
             new_ass_id = row[0] if row else None
-            cursor.close()
-            cnxn.close()
+
             # Assign the new association to all selected universities by name
             if new_ass_id:
                 for university_name in universities:
-                    cnxn = get_connection()
-                    cursor = cnxn.cursor()
-                    cursor.execute('UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
-                    cnxn.commit()
-                    cursor.close()
-                    cnxn.close()
+
+                    callUserPro('UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
+
             return jsonify({'status': 'success'})
         except Exception as e:
             print("Error in /api/associacoes POST:", e)
@@ -512,12 +505,8 @@ def api_get_associacoes():
 @app.route('/api/associacoes/<ass>', methods=['DELETE'])
 def api_delete_ass(ass):
     try:
-        cnxn = get_connection()
-        cursor = cnxn.cursor()
-        cursor.execute("DELETE FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Id = ?", (ass,))
-        cnxn.commit()
-        cursor.close()
-        cnxn.close()
+        callUserPro("EXEC dbo.deleteAcc ?", [ass])
+
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -525,8 +514,7 @@ def api_delete_ass(ass):
 @app.route('/api/associacoes/<ass>', methods=['PUT'])
 def api_update_ass(ass):
     try:
-        cnxn = get_connection()
-        cursor = cnxn.cursor()
+
         
         # Get the updated data from the request
         assName = request.form.get('assName')
@@ -534,28 +522,26 @@ def api_update_ass(ass):
         universities = json.loads(request.form.get('universities', '[]'))
         
         # Update the association
-        cursor.execute(
+        callUserPro(
             "UPDATE FADU_ASSOCIAÇAO_ACADEMICA SET Name = ?, Sigla = ? WHERE Id = ?",
-            (assName, assSigla, ass)
+            [assName, assSigla, ass]
         )
 
         # Update the university associations
         if universities:
             # First, remove the association from any university that currently has it
-            cursor.execute(
+            callUserPro(
                 "UPDATE FADU_UNIVERSIDADE SET Ass_Id = NULL WHERE Ass_Id = ?",
-                (ass,)
+                [ass]
             )
             # Then, set the new universities' associations
             for university_id in universities:
-                cursor.execute(
+                callUserPro(
                     "UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Id = ?",
-                    (ass, int(university_id))
+                    [ass, int(university_id)]
                 )
 
-        cnxn.commit()
-        cursor.close()
-        cnxn.close()
+
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
