@@ -250,3 +250,24 @@ class querrys:
         ORDER BY 
             m.Name;
         '''
+        
+    def get_team_modId(self):
+        return'''
+        select * from FADU_EQUIPA 
+        JOIN  FADU_ASSOCIAÇAO_ACADEMICA ass ON Ass_Id = ass.Id
+        where Mod_Id = ?
+    '''
+    
+    def post_jogo(self):
+        return '''
+        INSERT INTO FADU_JOGO (Data, Duracao, Resultado, LocalJogo, Fase_Id, Mod_Id, Equipa_id1, Equipa_id2)
+        VALUES (?, ?, NULL, ?, ?, ?, ?, ?)
+    '''
+    
+    def put_jogo(self):
+        return'''
+                UPDATE FADU_JOGO 
+                SET Data=?, Duracao=?, Resultado=?, LocalJogo=?, Fase_Id=?, Mod_Id=?, 
+                    Equipa_id1=?, Equipa_id2=?
+                WHERE Id=?
+            '''

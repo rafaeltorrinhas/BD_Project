@@ -214,15 +214,83 @@ def get_Ass_Info():
 def get_Jogos():
     return render_template('jogos.html', title='Jogos')
 
+@app.route('/api/jogo/<Id>' , methods=['DELETE','GET','PUT'])
+def get_jogos_id(Id):
+        if request.method == 'GET':
+            querry='''SELECT * FROM FADU_JOGO WHERE Id=?'''
+            cols, serialized = getInfo(querry,[Id])
+            return jsonify({'columns': cols, 'rows': serialized})
+        elif request.method == 'PUT':
+            
+            data = request.get_json()
+            
+            required_fields = ['hostTeam', 'opponentTeam', 'modality', 'date']
+            for field in required_fields:
+                if not data.get(field):
+                    return jsonify({'error': f'Missing required field: {field}'}), 400
+            
+            # Extract data from request
+            host_team = data.get('hostTeam')
+            opponent_team = data.get('opponentTeam')
+            modality = data.get('modality')
+            duration = data.get('duration', '00:00')  # Default duration if not provided
+            phase = data.get('phase')
+            location = data.get('location', '')
+            date = data.get('date')
+            result = data.get('result', '')  # Game result (score)
+            
+            # Validate that host and opponent teams are different
+            if host_team == opponent_team:
+                return jsonify({'error': 'Host team and opponent team cannot be the same'}), 400
+            
+            # Update query - adjust column names to match your database schema
+            update_query = q.put_jogo()
+            
+            # Parameters for the update query
+            params = [
+                date,
+                duration,
+                result,
+                location,
+                phase if phase else None,  # Allow null for phase
+                modality,
+                host_team,
+                opponent_team,
+                Id
+            ]
+            print(update_query)
+            print(params)
+            callUserPro(update_query,params)
+            return jsonify({'status': 'success'})
+        elif request.method == 'DELETE':
+            callUserPro("DELETE FROM FADU_JOGO WHERE Id=?",[Id])
+            return jsonify({'status': 'success'})
 
-@app.route('/api/jogos/')
+@app.route('/api/jogos/' , methods=['POST','GET'])
 def get_jogos():
-    page = request.args.get('page', 1, type=int)
-    per_page = 15
-    offset = (page - 1) * per_page
-    querry = q.get_Jogos()
-    cols, serialized = getInfo(querry, [offset, per_page])
-    return jsonify({'columns': cols, 'rows': serialized})
+    if request.method == 'GET':
+        page = request.args.get('page', 1, type=int)
+        per_page = 15
+        offset = (page - 1) * per_page
+        querry =q.get_Jogos()
+        cols, serialized = getInfo(querry,[offset,per_page])
+        return jsonify({'columns': cols, 'rows': serialized})
+    else:
+        data = request.get_json()
+        print(data)
+        host_team = data.get('hostTeam')
+        opponent_team = data.get('opponentTeam')
+        modality = data.get('modality')
+        duration = data.get('duration')
+        phase = data.get('phase')
+        location = data.get('location')
+        date = data.get('date')
+        querry=q.post_jogo()
+        callUserPro(querry,[date,duration,location,phase,modality,host_team,opponent_team])
+        return jsonify({'status': 'success'})
+        
+        
+        
 
 
 @app.route('/Jogos/<GameId>')
@@ -256,6 +324,24 @@ def get_Fases():
     cols, serialized = getInfo(query)
     return render_template('fases.html', title='Fases', columns=cols, rows=serialized)
 
+
+@app.route("/api/fases")
+def get_fases():
+    query = f'''
+    select * from FADU_FASE
+    '''
+    cols, serialized = getInfo(query)
+    return jsonify({'columns': cols, 'rows': serialized})
+
+
+
+
+@app.route("/api/teams/<modId>")
+def get_team_mod(modId):
+    query = q.get_team_modId()
+    cols, serialized = getInfo(query,[modId])
+    return jsonify({'columns': cols, 'rows': serialized})
+    
 
 @app.route('/Fases/<FaseId>')
 def get_Fases_Id(FaseId):
@@ -396,27 +482,17 @@ def api_get_associacoes():
             if not universities:
                 return jsonify({'status': 'error', 'message': 'No universities selected'})
             # Directly insert the new association
-            cnxn = get_connection()
-            cursor = cnxn.cursor()
-            cursor.execute(
-                "INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
-            cnxn.commit()
-            cursor.execute(
-                'SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
-            row = cursor.fetchone()
+
+            callUserPro("INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
+            coluns,row=getInfo('SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
             new_ass_id = row[0] if row else None
-            cursor.close()
-            cnxn.close()
+
             # Assign the new association to all selected universities by name
             if new_ass_id:
                 for university_name in universities:
-                    cnxn = get_connection()
-                    cursor = cnxn.cursor()
-                    cursor.execute(
-                        'UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
-                    cnxn.commit()
-                    cursor.close()
-                    cnxn.close()
+
+                    callUserPro('UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
+
             return jsonify({'status': 'success'})
         except Exception as e:
             print("Error in /api/associacoes POST:", e)
@@ -430,13 +506,8 @@ def api_get_associacoes():
 @app.route('/api/associacoes/<ass>', methods=['DELETE'])
 def api_delete_ass(ass):
     try:
-        cnxn = get_connection()
-        cursor = cnxn.cursor()
-        cursor.execute(
-            "DELETE FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Id = ?", (ass,))
-        cnxn.commit()
-        cursor.close()
-        cnxn.close()
+        callUserPro("EXEC dbo.deleteAcc ?", [ass])
+
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -445,37 +516,34 @@ def api_delete_ass(ass):
 @app.route('/api/associacoes/<ass>', methods=['PUT'])
 def api_update_ass(ass):
     try:
-        cnxn = get_connection()
-        cursor = cnxn.cursor()
 
+        
         # Get the updated data from the request
         assName = request.form.get('assName')
         assSigla = request.form.get('assSigla')
         universities = json.loads(request.form.get('universities', '[]'))
 
         # Update the association
-        cursor.execute(
+        callUserPro(
             "UPDATE FADU_ASSOCIAÇAO_ACADEMICA SET Name = ?, Sigla = ? WHERE Id = ?",
-            (assName, assSigla, ass)
+            [assName, assSigla, ass]
         )
 
         # Update the university associations
         if universities:
             # First, remove the association from any university that currently has it
-            cursor.execute(
+            callUserPro(
                 "UPDATE FADU_UNIVERSIDADE SET Ass_Id = NULL WHERE Ass_Id = ?",
-                (ass,)
+                [ass]
             )
             # Then, set the new universities' associations
             for university_id in universities:
-                cursor.execute(
+                callUserPro(
                     "UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Id = ?",
-                    (ass, int(university_id))
+                    [ass, int(university_id)]
                 )
 
-        cnxn.commit()
-        cursor.close()
-        cnxn.close()
+
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
