@@ -93,6 +93,36 @@
       </div>
     </div>
 
+    <!-- Add University Modal -->
+    <div class="modal fade" id="addUniversityModal" tabindex="-1" aria-labelledby="addUniversityModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="addUniversityForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="addUniversityModalLabel">Adicionar Universidade</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="uniName">Nome da Universidade</label>
+                <input type="text" class="form-control" id="uniName" name="uniName" required />
+              </div>
+              <div class="form-group">
+                <label for="uniEndereco">Endereço</label>
+                <input type="text" class="form-control" id="uniEndereco" name="uniEndereco" required />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Adicionar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -112,10 +142,17 @@
 
         if (e.target.closest(".delete-uni")) {
           e.preventDefault();
-          const uniId = e.target.closest(".delete-uni").getAttribute("data-id");
+          const deleteBtn = e.target.closest(".delete-uni");
+          const tr = deleteBtn.closest("tr");
+          // Swap extraction: Name is first column, Address is second column
+          const uniName = tr.children[0].textContent.trim();
+          const uniAddress = tr.children[1].textContent.trim();
+          console.log('Deleting university:', { uniName, uniAddress });
           if (confirm("Tem a certeza que quer apagar esta universidade?")) {
-            fetch(`/api/universidades/${uniId}`, {
+            fetch(`/api/universidades`, {
               method: "DELETE",
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uniName, uniAddress })
             })
               .then((response) => response.json())
               .then((data) => {
@@ -131,6 +168,33 @@
               });
           }
         }
+      });
+
+      // Modal open handler
+      document.getElementById('openModalBtn').addEventListener('click', function() {
+        $('#addUniversityModal').modal('show');
+      });
+
+      // Handle add university form submission
+      document.getElementById('addUniversityForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const uniName = document.getElementById('uniName').value;
+        const uniEndereco = document.getElementById('uniEndereco').value;
+
+        fetch('/api/universidades', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uniName, uniEndereco })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            $('#addUniversityModal').modal('hide');
+            window.location.reload();
+          } else {
+            alert('Erro ao adicionar universidade: ' + (data.message || ''));
+          }
+        });
       });
     </script>
   </body>

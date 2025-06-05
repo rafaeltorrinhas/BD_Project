@@ -5,10 +5,34 @@ document.addEventListener("DOMContentLoaded", function () {
         cachedAss = data;
     });
 
+    // Populate modalidades filter select
+    fetch('/api/modalidades')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('filterModalidade');
+            if (select) {
+                select.innerHTML = '';
+                data.rows.forEach(mod => {
+                    const option = document.createElement('option');
+                    option.value = mod[0]; // Use modalidade ID as value
+                    option.textContent = mod[1];
+                    select.appendChild(option);
+                });
+                // Initialize Select2
+                if (!$(select).hasClass("select2-hidden-accessible")) {
+                    $(select).select2({
+                        placeholder: "Selecione modalidades",
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
+            }
+        });
+
     document.getElementById("searchInput").addEventListener("input", function () {
         const searchTerm = this.value.trim();
         if (searchTerm.length > 2) {
-            fetch(`/api/search_associacoes?search=${encodeURIComponent(searchTerm)}&page=1`)
+            fetch(`/api/AssInfo?acc_name=${encodeURIComponent(searchTerm)}&page=1`)
                 .then((response) => response.json())
                 .then((data) => {
                     renderAssInfoTable(data.rows);
@@ -16,17 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
                 .catch((error) => console.error("Error fetching data:", error));
         } else {
-            if (cachedAss) {
-                renderAssInfoTable(cachedAss.rows);
-                renderPagination(
-                    cachedAss.total_pages,
-                    cachedAss.current_page
-                );
-            } else {
-                loadAssInfo(1).then((data) => {
-                    cachedAss = data;
-                });
-            }
+            loadAssInfo(1);
         }
     });
     document
@@ -174,87 +188,92 @@ function renderPagination(totalPages, currentPage) {
     }
 }
 
-$("#openModalBtn").click(function () {
-    loadUniversities("universityId").then(() => {
+$("#openModalBtn").off('click').on('click', function () {
+    loadUniversities('#universityId').then(() => {
+        // Initialize Select2 if not already initialized
+        if (!$('#universityId').hasClass("select2-hidden-accessible")) {
+            $('#universityId').select2({
+                placeholder: "Selecione as universidades",
+                allowClear: true,
+                width: '100%'
+            });
+        }
         $("#addAssModal").modal("show");
     });
 });
 
-function loadUniversities(selectElementId, selectedId = null, assId = 'NULL') {
-
-
-    return fetch(`/api/universityAss/${assId}`)
-        .then((response) => response.json())
-        .then((data) => {
-            const select = document.getElementById(selectElementId);
-            if (!select) {
-                console.error(`Select element with ID '${selectElementId}' not found!`);
-                return;
-            }
+function loadUniversities(select, isEdit = false, assId = null) {
+    // Use assId as a query parameter if provided
+    const url = assId ? `/api/universidades/sem_associacao?assId=${assId}` : '/api/universidades/sem_associacao';
+    
+    return fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // Clear old options and alerts
+            $(select).empty();
+            $(select).next('.alert').remove();
+            
             if (!data.rows || data.rows.length === 0) {
-
-
-                const warning = document.createElement("div");
-                warning.classList.add("alert", "alert-warning", "mt-2");
-                warning.textContent = "⚠️ Todas as universidades já têm uma associação atribuída. Adicione uma nova universidade primeiro.";
-                select.parentNode.insertBefore(warning, select.nextSibling);
-                select.parentNode.removeChild(select);
-
+                $(select).after('<div class="alert alert-warning">Nenhuma universidade disponível</div>');
                 return;
             }
-            select.innerHTML = "";
-            console.log("Associations data:", data);
-            data.rows.forEach((uni) => {
-
-                const option = document.createElement("option");
-                option.value = uni[0]; // University addrss
-                option.textContent = uni[1]; //  University name
-                if (selectedId && uni[0] === selectedId) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
+            
+            // Add new options
+            data.rows.forEach(row => {
+                const option = new Option(`${row[1]} (${row[0]})`, row[0]);
+                $(select).append(option);
             });
+            
+            // Initialize Select2 if not already initialized
+            if (!$(select).hasClass("select2-hidden-accessible")) {
+                $(select).select2({
+                    placeholder: "Selecione as universidades",
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
         })
-        .catch((error) => console.error("Error fetching associations:", error));
+        .catch(error => {
+            console.error('Error loading universities:', error);
+            $(select).after('<div class="alert alert-danger">Erro ao carregar universidades</div>');
+        });
 }
 function handleAddAssociation(event) {
-    event.preventDefault(); // prevent the default form submission
-
-    const assName = document.getElementById("assName").value.trim();
-    const assSigla = document.getElementById("assSigla").value.trim();
-    const universityAddres = document.getElementById("universityId").value;
-
-    if (!assName || !assSigla || !universityAddres) {
-        alert("Por favor, preencha todos os campos antes de adicionar uma associação.");
-        return false;
+    event.preventDefault();
+    
+    const assName = $('#assName').val();
+    const assSigla = $('#assSigla').val();
+    const universities = $('#universityId').val();
+    const modalidades = $('#addAssModalidades').val();
+    
+    if (!assName || !assSigla || !universities || universities.length === 0) {
+        alert('Por favor, preencha todos os campos obrigatórios');
+        return;
     }
-
-    const payload = new URLSearchParams({
-        assName: assName,
-        assSigla: assSigla,
-        universityAddres: universityAddres
-    });
-
-    console.log("Processing add association request...");
-
-    fetch("/api/associacoes", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: payload.toString(),
+    
+    const formData = new FormData();
+    formData.append('assName', assName);
+    formData.append('assSigla', assSigla);
+    formData.append('universities', JSON.stringify(universities));
+    formData.append('modalidades', JSON.stringify(modalidades));
+    
+    fetch('/api/associacoes', {
+        method: 'POST',
+        body: formData
     })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.status === "success") {
-                $("#addAssModal").modal("hide");
-                history.replaceState({}, document.title, window.location.pathname);
-                loadAssInfo(1); // reload the association table (or whatever function you use)
-            } else {
-                console.error("Server error:", data.message);
-            }
-        })
-        .catch((error) => console.error("Error adding association:", error));
-
-    return false; // just in case it's called from inline onsubmit
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            $('#addAssModal').modal('hide');
+            loadAssInfo(1);
+        } else {
+            alert(data.message || 'Erro ao adicionar associação');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao adicionar associação');
+    });
 }
 
 // filter informaciotn
@@ -278,7 +297,7 @@ document.getElementById("filterForm").addEventListener("submit", function (event
             switch (key) {
                 case "sort_by":
                     displayText = `Ordem: ${document.querySelector(
-                        `#filterSortBy option[value="${value}"]`
+                        `#filterSortBy option[value=\"${value}\"]`
                     ).textContent}`;
                     break;
                 default:
@@ -295,14 +314,18 @@ document.getElementById("filterForm").addEventListener("submit", function (event
         }
     }
 
-    console.log("Filters applied:", Object.fromEntries(formData));
-
+    // --- FIX: handle multiple modalidades ---
     const params = new URLSearchParams();
     for (let [key, value] of formData.entries()) {
-        if (value && value.trim() !== "") {
+        if (key === 'modalidade') {
+            formData.getAll('modalidade').forEach(val => {
+                params.append('modalidade', val);
+            });
+        } else if (value && value.trim() !== "") {
             params.append(key, value);
         }
     }
+    // --- END FIX ---
 
     fetch(`/api/AssInfo?${params.toString()}`)
         .then((response) => response.json())
@@ -376,8 +399,14 @@ function openEditModal(id) {
             });
         }
 
-        // Load universities for the edit modal
-        loadUniversities("editAssUniversity", null, id).then(() => {
+        // Load universities for the edit modal, passing the association id
+        loadUniversities('#editAssUniversity', false, id).then(() => {
+            // Pre-select current universities for this association
+            fetch(`/api/associacoes/${id}/universities`)
+                .then(response => response.json())
+                .then(data => {
+                    $('#editAssUniversity').val(data.addresses).trigger('change');
+                });
             // First fetch all available modalidades
             return fetch('/api/modalidades');
         })
@@ -386,10 +415,10 @@ function openEditModal(id) {
                 const select = document.getElementById('editAssModalidades');
                 select.innerHTML = ''; // Clear existing options
 
-                // Add all modalidades as options
+                // Add all modalidades as options (use ID as value)
                 data.rows.forEach(mod => {
                     const option = document.createElement('option');
-                    option.value = mod[1]; // Use modalidade name as value
+                    option.value = mod[0]; // Use modalidade ID as value
                     option.textContent = mod[1];
                     select.appendChild(option);
                 });
@@ -410,57 +439,41 @@ function openEditModal(id) {
         $("#editAssModal").modal("show");
     }
 }
-async function handleEditAssociation(event) {
+function handleEditAssociation(event) {
     event.preventDefault();
-
-    const id = document.getElementById("editAssId").value;
-    const name = document.getElementById("editAssName").value;
-    const sigla = document.getElementById("editAssSigla").value;
-    const selectedUniversities = $('#editAssUniversity').val() || [];
-    const selectedModalidades = $('#editAssModalidades').val() || [];
-
-    try {
-        // Update association details
-        const formData = new FormData();
-        formData.append('assName', name);
-        formData.append('assSigla', sigla);
-        formData.append('universities', JSON.stringify(selectedUniversities));
-
-        const response = await fetch(`/api/associacoes/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams(formData)
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to update association");
-        }
-
-        // Update modalidades
-        const modalidadesResponse = await fetch(`/api/ass/${id}/modalidades`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                modalidades: selectedModalidades
-            }),
-        });
-
-        if (!modalidadesResponse.ok) {
-            const errorData = await modalidadesResponse.json();
-            throw new Error(errorData.message || "Failed to update modalidades");
-        }
-
-        $("#editAssModal").modal("hide");
-
-        // Reload the data to show updated modalidades
-        const updatedData = await loadAssInfo(1);
-        cachedAss = updatedData;
-        renderAssInfoTable(updatedData.rows);
-        renderPagination(updatedData.total_pages, updatedData.current_page);
-    } catch (error) {
-        console.error("Error updating association:", error);
-        alert("Failed to update association: " + error.message);
+    
+    const assId = $('#editAssId').val();
+    const assName = $('#editAssName').val();
+    const assSigla = $('#editAssSigla').val();
+    const universities = $('#editAssUniversity').val();
+    const modalidades = $('#editAssModalidades').val();
+    
+    if (!assName || !assSigla || !universities || universities.length === 0) {
+        alert('Por favor, preencha todos os campos obrigatórios');
+        return;
     }
+    
+    const formData = new FormData();
+    formData.append('assName', assName);
+    formData.append('assSigla', assSigla);
+    formData.append('universities', JSON.stringify(universities));
+    formData.append('modalidades', JSON.stringify(modalidades));
+    
+    fetch(`/api/associacoes/${assId}`, {
+        method: 'PUT',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            $('#editAssModal').modal('hide');
+            loadAssInfo(1);
+        } else {
+            alert(data.message || 'Erro ao atualizar associação');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao atualizar associação');
+    });
 }

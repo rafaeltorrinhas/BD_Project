@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const tipoMedalha = this.dataset.medalId;
         const ano = this.dataset.ano;
 
-        fetch(`/api/ass/<assId>/medalhas`, {
+        fetch(`/api/ass/${assId}/medalhas`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",

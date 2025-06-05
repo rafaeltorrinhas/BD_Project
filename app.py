@@ -133,14 +133,12 @@ def get_Ass_Info():
         filters.append("ass.Name LIKE ?")
         params.append(f"%{acc_name}%")
 
-    # Filter: modalidade
+    # Filter: modalidade (by ID)
     modalidades = request.args.getlist('modalidade')
-    having_clause = ''
     if modalidades:
-        having_clause = "HAVING " + " AND ".join([
-            "STRING_AGG(mod.Name, ', ') LIKE ?" for _ in modalidades
-        ])
-        params.extend([f"%{modalidade}%" for modalidade in modalidades])
+        placeholders = ','.join(['?'] * len(modalidades))
+        filters.append(f"mod.Id IN ({placeholders})")
+        params.extend(modalidades)
 
     # Sorting
     sort_by = request.args.get('sort_by', '').strip()
@@ -170,8 +168,6 @@ def get_Ass_Info():
                 GROUP BY
                     ass.Id, ass.Name, ass.Sigla
         '''
-    if having_clause:
-        query += f" {having_clause}"
 
     query += f'''
         {sort_clause}
@@ -194,8 +190,6 @@ def get_Ass_Info():
     if filters:
         count_query += " WHERE " + " AND ".join(filters)
     count_query += " GROUP BY ass.Id, ass.Name, ass.Sigla"
-    if having_clause:
-        count_query += f" {having_clause}"
     count_cols, count_data = getInfo(count_query, params)
     total_ass = len(count_data) if count_data else 0
     total_pages = math.ceil(total_ass / per_page)
@@ -403,8 +397,8 @@ def inscritos_page():
 
 @app.route('/api/universityAss/<assId>', methods=['GET'])
 def get_uni_accId(assId):
-    query = '''SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL OR Ass_id = ?'''
-    uni_cols, uni_data = getInfo(query, assId)
+    query = '''SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_id IS NULL'''
+    uni_cols, uni_data = getInfo(query)
     return jsonify({'columns': uni_cols, 'rows': uni_data})
 
 
@@ -476,24 +470,56 @@ def api_get_associacoes():
         try:
             name = request.form.get('assName', '').strip()
             sigla = request.form.get('assSigla', '').strip()
-            universities = json.loads(request.form.get('universities', '[]'))
-            print("Received universities:", universities)  # Debug log
+            raw_universities = request.form.get('universities', '[]')
+            raw_modalidades = request.form.get('modalidades', '[]')
+            print("Raw universities:", raw_universities)
+            print("Raw modalidades:", raw_modalidades)
+            try:
+                universities = json.loads(raw_universities) if raw_universities else []
+            except Exception as e:
+                print("Error parsing universities:", e)
+                universities = []
+            try:
+                modalidades = json.loads(raw_modalidades) if raw_modalidades else []
+            except Exception as e:
+                print("Error parsing modalidades:", e)
+                modalidades = []
+            print("Parsed universities:", universities)
+            print("Parsed modalidades:", modalidades)
             if not universities:
                 return jsonify({'status': 'error', 'message': 'No universities selected'})
-            # Directly insert the new association
 
-            callUserPro(
-                "INSERT INTO FADU_ASSOCIAÇAO_ACADEMICA (Name, Sigla) VALUES (?, ?)", (name, sigla))
-            coluns, row = getInfo(
-                'SELECT TOP 1 Id FROM FADU_ASSOCIAÇAO_ACADEMICA WHERE Name = ? AND Sigla = ? ORDER BY Id DESC', (name, sigla))
-            new_ass_id = row[0] if row else None
+            university_address = universities[0]  # The address is now the value
 
-            # Assign the new association to all selected universities by name
-            if new_ass_id:
-                for university_name in universities:
+            cnxn = get_connection()
+            cursor = cnxn.cursor()
 
+            sql = '''
+            DECLARE @NewAccId INT;
+            EXEC dbo.addAss @assName=?, @assSigla=?, @universityAddress=?, @NewAccId=@NewAccId OUTPUT;
+            SELECT @NewAccId;
+            '''
+            cursor.execute(sql, (name, sigla, university_address))
+            new_ass_id = cursor.fetchone()[0]
+
+            cnxn.commit()
+            cursor.close()
+            cnxn.close()
+
+            # Update remaining universities if any
+            if len(universities) > 1:
+                for university_address in universities[1:]:
                     callUserPro(
-                        'UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Name = ?', (new_ass_id, university_name))
+                        'UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Address = ?',
+                        [new_ass_id, university_address])
+
+            # Insert modalidades for the new association
+            if modalidades:
+                for modalidade in modalidades:
+                    callUserPro(
+                        'INSERT INTO FADU_ASSMODALIDADE (Ass_Id, Mod_Id) VALUES (?, ?)',
+                        [new_ass_id, modalidade]
+                    )
 
             return jsonify({'status': 'success'})
         except Exception as e:
@@ -518,30 +544,57 @@ def api_delete_ass(ass):
 @app.route('/api/associacoes/<ass>', methods=['PUT'])
 def api_update_ass(ass):
     try:
-
-        # Get the updated data from the request
         assName = request.form.get('assName')
         assSigla = request.form.get('assSigla')
         universities = json.loads(request.form.get('universities', '[]'))
+        modalidades = json.loads(request.form.get('modalidades', '[]'))
 
-        # Update the association
-        callUserPro(
-            "UPDATE FADU_ASSOCIAÇAO_ACADEMICA SET Name = ?, Sigla = ? WHERE Id = ?",
-            [assName, assSigla, ass]
-        )
+        if not universities:
+            return jsonify({'status': 'error', 'message': 'No universities selected'})
 
-        # Update the university associations
-        if universities:
-            # First, remove the association from any university that currently has it
-            callUserPro(
-                "UPDATE FADU_UNIVERSIDADE SET Ass_Id = NULL WHERE Ass_Id = ?",
-                [ass]
-            )
-            # Then, set the new universities' associations
-            for university_id in universities:
+        university_address = universities[0]  # The address is now the value
+
+        cnxn = get_connection()
+        cursor = cnxn.cursor()
+        
+        # First, remove the association from any university that currently has it
+        cursor.execute('UPDATE FADU_UNIVERSIDADE SET Ass_Id = NULL WHERE Ass_Id = ?', [ass])
+        
+        # Then update the association and assign it to the first university
+        cursor.execute('''
+            UPDATE FADU_ASSOCIAÇAO_ACADEMICA 
+            SET Name = ?, Sigla = ? 
+            WHERE Id = ?
+        ''', [assName, assSigla, ass])
+        
+        # Update the first university
+        cursor.execute('''
+            UPDATE FADU_UNIVERSIDADE 
+            SET Ass_Id = ? 
+            WHERE Address = ?
+        ''', [ass, university_address])
+        
+        # Update remaining universities if any
+        if len(universities) > 1:
+            for university_address in universities[1:]:
+                cursor.execute('''
+                    UPDATE FADU_UNIVERSIDADE 
+                    SET Ass_Id = ? 
+                    WHERE Address = ?
+                ''', [ass, university_address])
+        
+        cnxn.commit()
+        cursor.close()
+        cnxn.close()
+
+        # Remove old modalidades
+        callUserPro('DELETE FROM FADU_ASSMODALIDADE WHERE Ass_Id = ?', [ass])
+        # Insert new modalidades
+        if modalidades:
+            for modalidade in modalidades:
                 callUserPro(
-                    "UPDATE FADU_UNIVERSIDADE SET Ass_Id = ? WHERE Id = ?",
-                    [ass, int(university_id)]
+                    'INSERT INTO FADU_ASSMODALIDADE (Ass_Id, Mod_Id) VALUES (?, ?)',
+                    [ass, modalidade]
                 )
 
         return jsonify({"status": "success"})
@@ -552,12 +605,21 @@ def api_update_ass(ass):
 @app.route('/api/search_associacoes', methods=['GET'])
 def search_ass():
     search = request.args.get('search', '').strip()
+    print(f"[DEBUG] /api/search_associacoes called with search='{search}'")
     page = request.args.get('page', 1, type=int)
     per_page = 15
     offset = (page - 1) * per_page
 
     if len(search) < 2:
-        return jsonify([])
+        # Return empty but consistent structure
+        response = {
+            'columns': [],
+            'rows': [],
+            'total_ass': 0,
+            'total_pages': 0,
+            'current_page': page
+        }
+        return jsonify(response)
 
     # Main query with pagination
     query = q.get_Ass_Search_Name()
@@ -932,18 +994,17 @@ def api_manage_medalhas(ass_id):
     if request.method == 'POST':
         data = request.get_json()
         modalidade = data.get('modalidade')
-        tipo_medalha = data.get('tipoMedalha')
+        tipo_medalha = data.get('tipoMedalha')  # This is now the medal type ID
         ano = data.get('ano')
         print(ano, tipo_medalha, modalidade)
 
-        rows, s = getInfo(
-            ("SELECT Id FROM FADU_TIPOMEDALHA WHERE Type = ?", tipo_medalha))
-        tipo_medalha_id = s[0]
-        # Insert the medal
-        uery = ("""
+        # Insert the medal directly using the medal type ID
+        callUserPro(
+            """
                 INSERT INTO FADU_MEDALHAS (Ass_Id, Mod_Id, TypeMedal_Id, Year)
                 VALUES (?, ?, ?, ?)
-            """, (ass_id, modalidade, tipo_medalha_id, ano))
+            """, [ass_id, modalidade, tipo_medalha, ano]
+        )
 
         return jsonify({"status": "success"})
 
@@ -953,8 +1014,6 @@ def api_manage_medalhas(ass_id):
         tipo_medalha = data.get('tipoMedalha')
         ano = data.get('ano')
         print(ano, tipo_medalha, modalidade)
-
-        # Get the modalidade ID
 
         # Delete the medal
         callUserPro("""
@@ -1262,6 +1321,49 @@ def get_ranking():
     except Exception as e:
         print(f"Error getting ranking: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/addUniversidades', methods=['GET'])
+def add_universidades():
+    query = 'SELECT Name AS UniName, Address AS UniEndereco FROM FADU_UNIVERSIDADE'
+    cols, rows = getInfo(query)
+    return jsonify({'columns': cols, 'rows': rows})
+
+
+@app.route('/api/universidades', methods=['POST'])
+def add_universidade():
+    data = request.get_json()
+    uniName = data.get('uniName')
+    uniEndereco = data.get('uniEndereco')
+    callUserPro(
+        "INSERT INTO FADU_UNIVERSIDADE (Name, Address) VALUES (?, ?)",
+        [uniName, uniEndereco]
+    )
+    return jsonify({'status': 'success'})
+
+@app.route('/api/universidades', methods=['DELETE'])
+def remove_universidade():
+    data = request.get_json()
+    uniName = data.get('uniName')
+    uniAddress = data.get('uniAddress')
+    print(f"[DEBUG] Received for delete: Name='{uniName}', Address='{uniAddress}'")
+    query = "DELETE FROM FADU_UNIVERSIDADE WHERE Name = ? AND Address = ?"
+    callUserPro(query, [uniName, uniAddress])
+    return jsonify({'status': 'success'})
+
+
+
+
+@app.route('/api/universidades/sem_associacao', methods=['GET'])
+def universidades_sem_associacao():
+    ass_id = request.args.get('assId')
+    if ass_id:
+        query = "SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_Id IS NULL OR Ass_Id = ?"
+        cols, rows = getInfo(query, [ass_id])
+    else:
+        query = "SELECT Address, Name FROM FADU_UNIVERSIDADE WHERE Ass_Id IS NULL"
+        cols, rows = getInfo(query)
+    return jsonify({'columns': cols, 'rows': rows})
 
 
 if __name__ == '__main__':

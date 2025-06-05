@@ -92,13 +92,13 @@
       }
       /* Action buttons styling */
       .delete-medal {
-        color: #dc3545;
+        color: #2563eb;
         text-decoration: none;
         margin: 0 5px;
         transition: color 0.2s;
       }
       .delete-medal:hover {
-        color: #c82333;
+        color: #1e40af;
         text-decoration: none;
       }
       .btn-primary {
@@ -228,7 +228,7 @@
                   <td>{{ medal[1] }}</td>
                   <td>{{ medal[2] }}</td>
                   <td>
-                    <a href="#" class="delete-team" 
+                    <a href="#" class="delete-medal" 
                        data-medal-id="{{ medal[0] }}" 
                        data-ass-id="{{ rows[0][0] }}"
                        data-modalidade="{{ medal[2] }}"
@@ -334,7 +334,10 @@
                 <select class="form-control" id="modalidade" name="modalidade" required>
                   <option value="">Selecione uma modalidade</option>
                   {% for modalidade in rows[0][3].split(', ') %}
-                  <option value="{{ modalidade }}">{{ modalidade }}</option>
+                    {% if modalidade %}
+                      {% set parts = modalidade.split(':') %}
+                      <option value="{{ parts[0] }}">{{ parts[1] }}</option>
+                    {% endif %}
                   {% endfor %}
                 </select>
               </div>
@@ -342,9 +345,9 @@
                 <label for="tipoMedalha">Tipo de Medalha</label>
                 <select class="form-control" id="tipoMedalha" name="tipoMedalha" required>
                   <option value="">Selecione o tipo</option>
-                  <option value="Ouro">Ouro</option>
-                  <option value="Prata">Prata</option>
-                  <option value="Bronze">Bronze</option>
+                  <option value="1">Ouro</option>
+                  <option value="2">Prata</option>
+                  <option value="3">Bronze</option>
                 </select>
               </div>
               <div class="form-group">
