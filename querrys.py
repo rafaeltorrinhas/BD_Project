@@ -136,6 +136,9 @@ class querrys:
             SELECT 
                 p.Id AS Person_Id,
                 p.Name AS Inscrito_Name,
+                p.NumeroCC,
+                p.Phone,
+                p.DateBirth,
                 STRING_AGG(m.Name, ', ') AS Modalidades,
                 ass.Name AS Association_Name,
                 'Athlete' AS InscritoType
@@ -150,11 +153,14 @@ class querrys:
             LEFT JOIN
                 FADU_MODALIDADE m ON pm.Mod_Id = m.Id
             GROUP BY
-                p.Id, p.Name, ass.Name
+                p.Id, p.Name, p.NumeroCC, p.Phone, p.DateBirth, ass.Name
             UNION ALL
             SELECT 
                 p.Id AS Person_Id,
                 p.Name AS Inscrito_Name,
+                p.NumeroCC,
+                p.Phone,
+                p.DateBirth,
                 NULL AS Modalidades,
                 ass.Name AS Association_Name,
                 'Coach' AS InscritoType
@@ -168,6 +174,9 @@ class querrys:
             SELECT 
                 p.Id AS Person_Id,
                 p.Name AS Inscrito_Name,
+                p.NumeroCC,
+                p.Phone,
+                p.DateBirth,
                 NULL AS Modalidades,
                 ass.Name AS Association_Name,
                 'Referee' AS InscritoType

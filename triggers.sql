@@ -110,6 +110,7 @@ END;
 go
 
 -- on delet of a player it will put all the team ID where he is as the default -1  medPerson and PERSONEUIPA AND PERSON MOD 
+
 CREATE TRIGGER trg_DeletAthelete
 ON FADU_ATLETA
 AFTER DELETE
@@ -118,19 +119,19 @@ BEGIN
     BEGIN TRANSACTION;
     BEGIN TRY
         DECLARE @DummyPersonId INT;
-        @DummyPersonId = 0
+        SET @DummyPersonId = 0
         
         UPDATE dbo.FADU_PERSONEQUIPA
         SET Person_Id = @DummyPersonId
-        WHERE Person_Id IN (SELECT Id FROM deleted);
+        WHERE Person_Id IN (SELECT Person_Id FROM deleted);
 
         UPDATE dbo.FADU_PERSONMOD
         SET Person_id = @DummyPersonId
-        WHERE Person_id IN (SELECT Id FROM deleted);
+        WHERE Person_id IN (SELECT Person_Id FROM deleted);
 
         UPDATE dbo.FADU_MEDPERS
         SET Person_Id = @DummyPersonId
-        WHERE Person_Id IN (SELECT Id FROM deleted);
+        WHERE Person_Id IN (SELECT Person_Id FROM deleted);
 
         COMMIT TRANSACTION;
     END TRY
@@ -141,6 +142,9 @@ BEGIN
     END CATCH
 END;
 go
+
+
+
 -- Trigger to handle cascading deletion when removing modalidades from an association
 CREATE OR ALTER TRIGGER trg_DeleteAssModalidade
 ON FADU_ASSMODALIDADE
@@ -220,3 +224,33 @@ BEGIN
     END CATCH
 END;
 
+
+CREATE TRIGGER trg_CHECKTEAMNUMBER
+ON FADU_PERSONEQUIPA
+AFTER INSERT
+AS
+BEGIN
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        IF (SELECT COUNT(*) 
+            FROM FADU_PERSONEQUIPA 
+            WHERE EQUIPA_Id IN (SELECT EQUIPA_Id FROM INSERTED)) 
+            >= (SELECT MaxPlayers 
+                 FROM FADU_EQUIPA AS e
+                 JOIN FADU_MODALIDADE AS mod ON mod.ID = e.Mod_Id
+                 WHERE e.Id IN (SELECT EQUIPA_Id FROM INSERTED))
+    BEGIN
+            ROLLBACK TRANSACTION;
+            THROW 51000, 'Cannot add another player to this team; maximum number of players reached.', 1;
+        END
+    BEGIN
+        COMMIT TRANSACTION;
+        PRINT 'Player added successfully to the team.';
+    END
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        PRINT 'Error hen cheching the number of players in that team.';
+        THROW;
+    END CATCH
+END;

@@ -880,7 +880,7 @@ def api_add_athlete():
                 "type_asc": "InscritoType ASC",
                 "type_desc": "InscritoType DESC"
             }
-            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'p.Id')}"
+            sort_clause = f"ORDER BY {sort_map.get(sort_by, 'Person_Id')}"
 
         # Base query
         query = q.get_Atletas_search()+'''
@@ -1251,24 +1251,12 @@ def get_ranking():
             EXEC dbo.ranking_cursor
         ''')
 
-        # Get the results
+        # Get the results and convert each row to a list
         rows = cursor.fetchall()
-        
-        # Get team names
-        for i, row in enumerate(rows):
-            cursor.execute('''
-                SELECT ass.Name 
-                FROM FADU_ASSOCIAÇAO_ACADEMICA ass 
-                WHERE ass.Id = ?
-            ''', [row[1]])
-            ass_name = cursor.fetchone()[0]
-            rows[i] = (row[0], ass_name, row[2])  # (team_id, team_name, games_won)
-
-        cursor.close()
-        cnxn.close()
+        rows = [list(row) for row in rows]
 
         return jsonify({
-            'columns': ['Team ID', 'Team Name', 'Games Won'],
+            'columns': ['Associação ID', 'Associação', 'Jogos Ganhos'],
             'rows': rows
         })
     except Exception as e:

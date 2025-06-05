@@ -110,15 +110,15 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- Validate updates: ensure no duplicates in NumeroCC
-        IF EXISTS (
-            SELECT 1
-            FROM dbo.FADU_PERSON
-            WHERE NumeroCC = @NumeroCC or Email = @Email
-              AND Id <> @Id
-        )
-        BEGIN
-            THROW 50001, 'Duplicate NumeroCC detected or Email!', 1;
-        END
+        --IF EXISTS (
+        --    SELECT 1
+        --    FROM dbo.FADU_PERSON
+        --    WHERE NumeroCC = @NumeroCC or Email = @Email
+        --      AND Id <> @Id
+        --)
+        --BEGIN
+        --    THROW 50001, 'Duplicate NumeroCC detected or Email!', 1;
+        --END
 
         -- Update athlete information
         UPDATE dbo.FADU_PERSON
@@ -410,43 +410,35 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @Equipa_Id INT, @Total_Ganhos INT
+    -- Create temporary table to store each win (one row per win)
+    CREATE TABLE #AllWins (Equipa_Id INT)
 
-    DECLARE ranking_cursor CURSOR FOR
-    SELECT Equipa_id1 AS Equipa_Id, COUNT(*) AS Total_Ganhos
+    -- Insert home team wins (one row per win)
+    INSERT INTO #AllWins (Equipa_Id)
+    SELECT Equipa_id1
     FROM FADU_JOGO
     WHERE Resultado LIKE '%-%' AND
           (CAST(SUBSTRING(Resultado, 1, CHARINDEX('-', Resultado) - 1) AS INT) >
            CAST(SUBSTRING(Resultado, CHARINDEX('-', Resultado) + 1, LEN(Resultado)) AS INT))
-    GROUP BY Equipa_id1
-    UNION
-    SELECT Equipa_id2 AS Equipa_Id, COUNT(*) AS Total_Ganhos
+
+    -- Insert away team wins (one row per win)
+    INSERT INTO #AllWins (Equipa_Id)
+    SELECT Equipa_id2
     FROM FADU_JOGO
     WHERE Resultado LIKE '%-%' AND
           (CAST(SUBSTRING(Resultado, 1, CHARINDEX('-', Resultado) - 1) AS INT) <
            CAST(SUBSTRING(Resultado, CHARINDEX('-', Resultado) + 1, LEN(Resultado)) AS INT))
-    GROUP BY Equipa_id2
 
-    OPEN ranking_cursor
+    -- Aggregate by association
+    SELECT 
+        E.Ass_Id, 
+        A.Name AS Association_Name, 
+        COUNT(*) as Total_Jogos_Ganhos
+    FROM #AllWins W
+    JOIN FADU_EQUIPA E ON W.Equipa_Id = E.Id
+    JOIN FADU_ASSOCIAÇAO_ACADEMICA A ON E.Ass_Id = A.Id
+    GROUP BY E.Ass_Id, A.Name
+    ORDER BY Total_Jogos_Ganhos DESC
 
-    FETCH NEXT FROM ranking_cursor INTO @Equipa_Id, @Total_Ganhos
-
-    CREATE TABLE #Ranking (Equipa_Id INT, Jogos_Ganhos INT)
-
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        INSERT INTO #Ranking (Equipa_Id, Jogos_Ganhos)
-        VALUES (@Equipa_Id, @Total_Ganhos)
-
-        FETCH NEXT FROM ranking_cursor INTO @Equipa_Id, @Total_Ganhos
-    END
-
-    CLOSE ranking_cursor
-    DEALLOCATE ranking_cursor
-
-    SELECT R.Equipa_Id, E.Ass_Id, R.Jogos_Ganhos
-    FROM #Ranking R
-    JOIN FADU_EQUIPA E ON R.Equipa_Id = E.Id
-    ORDER BY R.Jogos_Ganhos DESC
-
+    DROP TABLE #AllWins
 END

@@ -19,16 +19,19 @@ document.getElementById("filterForm").addEventListener("submit", function (e) {
 
             let displayText = "";
             switch (key) {
-                case "association":
-                    displayText = `Associação: ${document.querySelector(
-                        `#filterAssociation option[value="${value}"]`
+                case "cc_number":
+                    displayText = `CC: ${value}`;
+                    break;
+                case "phone_number":
+                    displayText = `Telefone: ${value}`;
+                    break;
+                case "age":
+                    displayText = `Idade: ${value}`;
+                    break;
+                case "type":
+                    displayText = `Tipo: ${document.querySelector(
+                        `#filterInscritoType option[value="${value}"]`
                     ).textContent}`;
-                    break;
-                case "min_age":
-                    displayText = `Idade Mín: ${value}`;
-                    break;
-                case "max_age":
-                    displayText = `Idade Máx: ${value}`;
                     break;
                 case "sort_by":
                     displayText = `Ordem: ${document.querySelector(
@@ -51,7 +54,7 @@ document.getElementById("filterForm").addEventListener("submit", function (e) {
 
     console.log("Filters applied:", Object.fromEntries(formData));
 
-    // 2️⃣ Apply filters by querying the backend
+    
     const params = new URLSearchParams();
     for (let [key, value] of formData.entries()) {
         if (value && value.trim() !== "") {

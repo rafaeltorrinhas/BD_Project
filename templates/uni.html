@@ -50,53 +50,7 @@
           </div>
         </div>
 
-        <div class="filter-section" id="filterSection">
-          <div class="filter-header" onclick="toggleFilters()">
-            <h3 class="filter-title">
-              <i class="fas fa-filter"></i>
-              Filtros Avançados
-            </h3>
-            <button class="filter-toggle" id="filterToggle">
-              <i class="fas fa-chevron-down"></i>
-            </button>
-          </div>
-          <div class="filter-content" id="filterContent">
-            <!-- Active Filters Display -->
-            <div class="active-filters" id="activeFilters" style="display: none">
-              <strong><i class="fas fa-tags mr-2"></i>Filtros Ativos:</strong>
-              <div class="active-filter-tags" id="activeFilterTags"></div>
-            </div>
-            <!-- Filter Form -->
-            <form id="filterForm">
-              <div class="filter-row">
-                <div class="filter-group">
-                  <label class="filter-label">
-                    <i class="fas fa-university"></i>
-                    Nome
-                  </label>
-                  <input type="text" id="filterNome" name="nome" class="filter-input" placeholder="Ex: Universidade do Porto" />
-                </div>
-                <div class="filter-group">
-                  <label class="filter-label">
-                    <i class="fas fa-tag"></i>
-                    Sigla
-                  </label>
-                  <input type="text" id="filterSigla" name="sigla" class="filter-input" placeholder="Ex: U.Porto" />
-                </div>
-              </div>
-              <div class="filter-actions">
-                <button type="button" class="btn-filter btn-clear-filter" onclick="clearFilters()">
-                  <i class="fas fa-times"></i>
-                  Limpar Filtros
-                </button>
-                <button type="submit" class="btn-filter btn-apply-filter">
-                  <i class="fas fa-search"></i>
-                  Aplicar Filtros
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+       
         <div class="controls-section mb-3 d-flex align-items-center justify-content-between">
           <div></div>
           <button id="openModalBtn" class="btn btn-add">
