@@ -70,21 +70,41 @@ END;
 go
 
 
-CREATE PROCEDURE dbo.deleteAthlete
+CREATE PROCEDURE dbo.deletePerson
     @PersonId INT
 AS
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        DELETE FROM FADU_ATLETA
-        WHERE Person_Id = @PersonId;
+        DELETE FROM FADU_PERSONEQUIPA WHERE Person_Id = @PersonId;
+        DELETE FROM FADU_MEDPERS WHERE Person_Id = @PersonId;
 
-        DELETE FROM FADU_PERSON
-        WHERE Id = @PersonId;
+        -- Check and delete from FADU_ATLETA
+        IF EXISTS (SELECT 1 FROM FADU_ATLETA WHERE Person_Id = @PersonId)
+        BEGIN
+            DELETE FROM FADU_ATLETA WHERE Person_Id = @PersonId;
+        END
+        -- Check and delete from FADU_ARBITRO
+        ELSE IF EXISTS (SELECT 1 FROM FADU_ARBITRO WHERE Person_Id = @PersonId)
+        BEGIN
+            DELETE FROM FADU_ARBITRO WHERE Person_Id = @PersonId;
+        END
+        -- Check and delete from FADU_TREINADOR
+        ELSE IF EXISTS (SELECT 1 FROM FADU_TREINADOR WHERE Person_Id = @PersonId)
+        BEGIN
+            DELETE FROM FADU_TREINADOR WHERE Person_Id = @PersonId;
+        END
+        ELSE
+        BEGIN
+            RAISERROR('PersonId not found in any role table.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
 
-        DELETE FROM FADU_PERSONMOD
-        WHERE Person_Id = @PersonId;
+        -- Common deletions
+        DELETE FROM FADU_PERSON WHERE Id = @PersonId;
+        DELETE FROM FADU_PERSONMOD WHERE Person_Id = @PersonId;
 
         COMMIT TRANSACTION;
     END TRY
@@ -93,6 +113,8 @@ BEGIN
         RAISERROR ('Error', 16, 1);
     END CATCH
 END;
+GO
+
 go
 CREATE PROCEDURE dbo.updateAthlete
     @Id INT,
@@ -189,11 +211,12 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        DELETE FROM FADU_MEDALHAS
+        WHERE Ass_Id = @Acc;
+
         DELETE FROM FADU_ASSMODALIDADE
         WHERE Ass_Id = @Acc;
 
-        DELETE FROM FADU_MEDALHAS
-        WHERE Ass_Id = @Acc;
 
         UPDATE  FADU_PERSON
         SET Ass_id = NULL

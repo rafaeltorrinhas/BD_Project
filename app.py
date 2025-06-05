@@ -720,7 +720,7 @@ def api_delete_athlete(athlete):
     try:
         athlete = int(athlete)
         callUserProcedure = '''
-            EXEC dbo.deleteAthlete ? ;
+            EXEC dbo.deletePerson ? ;
         '''
         callUserPro(callUserProcedure, [athlete])
         return jsonify({'status': 'success'}), 200
