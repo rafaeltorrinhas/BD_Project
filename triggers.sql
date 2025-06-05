@@ -53,6 +53,12 @@ BEGIN
             FROM inserted
             GROUP BY Mod_Id, Ass_Id
         ) AS I ON AM.Mod_Id = I.Mod_Id AND AM.Ass_Id = I.Ass_Id;
+
+        INSERT INTO FADU_MEDPERS ([Year], Mod_Id, Ass_Id, Person_Id)
+        SELECT i.Year, i.Mod_Id, i.Ass_Id, pe.Person_Id 
+        FROM inserted i
+        JOIN FADU_EQUIPA e ON e.Mod_Id = i.Mod_Id AND e.Ass_Id = i.Ass_Id
+        JOIN FADU_PERSONEQUIPA pe ON pe.EQUIPA_Id = e.Id;
         COMMIT TRANSACTION;
 
     END TRY
@@ -68,18 +74,18 @@ CREATE TRIGGER trg_UPDATEMEDALSINFO
 ON FADU_MEDALHAS
 AFTER UPDATE
 AS
-IF EXISTS (
-    SELECT 1
-    FROM inserted i
-    where i.Mod_Id<> (select Mod_id from deleted ) or i.Ass_Id <> (select Ass_Id from deleted )
-)
-BEGIN 
-
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN deleted d ON i.Year = d.Year AND i.Mod_Id = d.Mod_Id AND i.Ass_Id = d.Ass_Id
+        WHERE i.Mod_Id <> d.Mod_Id OR i.Ass_Id <> d.Ass_Id
+    )
+    BEGIN
         BEGIN TRY
+            BEGIN TRANSACTION;
 
-        BEGIN TRANSACTION;
-
-    
+            -- Increment medals for the new Mod_Id and Ass_Id
             UPDATE FADU_ASSMODALIDADE
             SET Number_medals = Number_medals + I.NumCount
             FROM FADU_ASSMODALIDADE AM
@@ -89,24 +95,44 @@ BEGIN
                 GROUP BY Mod_Id, Ass_Id
             ) AS I ON AM.Mod_Id = I.Mod_Id AND AM.Ass_Id = I.Ass_Id;
 
+            -- Insert new rows into FADU_MEDPERS
+            INSERT INTO FADU_MEDPERS ([Year], Mod_Id, Ass_Id, Person_Id)
+            SELECT i.Year, i.Mod_Id, i.Ass_Id, pe.Person_Id 
+            FROM inserted i
+            JOIN FADU_EQUIPA e ON e.Mod_Id = i.Mod_Id AND e.Ass_Id = i.Ass_Id
+            JOIN FADU_PERSONEQUIPA pe ON pe.EQUIPA_Id = e.Id;
+
+            -- Decrement medals for the old Mod_Id and Ass_Id
             UPDATE FADU_ASSMODALIDADE
-            SET Number_medals = Number_medals - I.NumCount
+            SET Number_medals = Number_medals - D.NumCount
             FROM FADU_ASSMODALIDADE AM
             INNER JOIN (
                 SELECT Mod_Id, Ass_Id, COUNT(*) AS NumCount
                 FROM deleted
                 GROUP BY Mod_Id, Ass_Id
-            ) AS I ON AM.Mod_Id = I.Mod_Id AND AM.Ass_Id = I.Ass_Id;
+            ) AS D ON AM.Mod_Id = D.Mod_Id AND AM.Ass_Id = D.Ass_Id;
+
+            -- Delete old rows from FADU_MEDPERS
+            DELETE FROM FADU_MEDPERS
+            WHERE EXISTS (
+                SELECT 1
+                FROM deleted d
+                WHERE FADU_MEDPERS.Mod_Id = d.Mod_Id
+                  AND FADU_MEDPERS.Ass_Id = d.Ass_Id
+                  AND FADU_MEDPERS.Year = d.Year
+            );
+
             COMMIT TRANSACTION;
         END TRY
         BEGIN CATCH
-            PRINT('Error updating assModalidade ')
+            PRINT('Error updating assModalidade');
             ROLLBACK TRANSACTION;
             THROW;
         END CATCH
-
-
+    END
 END;
+GO
+
 go
 
 -- on delet of a player it will put all the team ID where he is as the default -1  medPerson and PERSONEUIPA AND PERSON MOD 
