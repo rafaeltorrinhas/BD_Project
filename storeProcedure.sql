@@ -130,19 +130,6 @@ BEGIN
 
     BEGIN TRY
         BEGIN TRANSACTION;
-
-        -- Validate updates: ensure no duplicates in NumeroCC
-        --IF EXISTS (
-        --    SELECT 1
-        --    FROM dbo.FADU_PERSON
-        --    WHERE NumeroCC = @NumeroCC or Email = @Email
-        --      AND Id <> @Id
-        --)
-        --BEGIN
-        --    THROW 50001, 'Duplicate NumeroCC detected or Email!', 1;
-        --END
-
-        -- Update athlete information
         UPDATE dbo.FADU_PERSON
         SET
             Name = @Name,
@@ -465,3 +452,56 @@ BEGIN
 
     DROP TABLE #AllWins
 END
+go
+CREATE PROCEDURE dbo.InsertLogin
+    @Email VARCHAR(64),
+    @Password NVARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @PersonId INT;
+
+    -- Buscar o Id da pessoa
+    SELECT @PersonId = Id
+    FROM dbo.FADU_PERSON
+    WHERE Email = @Email;
+
+    IF @PersonId IS NULL
+    BEGIN
+        RAISERROR('No player found with this email.', 16, 1);
+        RETURN;
+    END
+
+    -- Hash da password
+    DECLARE @HashedPassword VARBINARY(256);
+    SET @HashedPassword = HASHBYTES('SHA2_256', @Password);
+
+    -- Inserir no login
+    INSERT INTO dbo.FADU_LOGIN (Person_Id, Pass)
+    VALUES (@PersonId, @HashedPassword);
+END;
+go
+CREATE PROCEDURE ValidateLogin
+    @Email VARCHAR(64),
+    @Password NVARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Compare the stored hashed password using HASHBYTES
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.FADU_PERSON p
+        JOIN dbo.FADU_LOGIN l ON l.Person_Id = p.Id
+        WHERE p.Email = @Email
+          AND l.Pass = HASHBYTES('SHA2_256', @Password)
+    )
+    BEGIN
+        SELECT 'success' AS status;
+    END
+    ELSE
+    BEGIN
+        RAISERROR('Invalid email or password', 16, 1);
+    END
+END;

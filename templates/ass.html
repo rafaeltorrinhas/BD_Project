@@ -127,25 +127,30 @@
     />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-custom">
-      <div class="container">
-        <a class="navbar-brand" href="/">
-          <i class="fas fa-graduation-cap"></i>
-          FADU
-        </a>
+<nav class="navbar navbar-expand-lg navbar-custom">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <i class="fas fa-graduation-cap"></i> FADU
+    </a>
 
-        <div class="ml-auto">
-          <select class="nav-select" onchange="navigateToPage(this.value)">
-            <option value="">— Selecionar Vista —</option>
-            <option value="/Uni">🏛️ Universidades</option>
-            <option value="/Ass" selected>🏆 Associações</option>
-            <option value="/Jogos">⚽ Jogos</option>
-            <option value="/Fases">📅 Fases</option>
-            <option value="/Inscritos" >👤 Inscritos</option>
-          </select>
-        </div>
-      </div>
-    </nav>
+    <div class="ml-auto">
+      <select class="nav-select" onchange="navigateToPage(this.value)">
+        <option value="">— Selecionar Vista —</option>
+        <option value="/Uni">🏛️ Universidades</option>
+        <option value="/Ass" selected>🏆 Associações</option>
+        <option value="/Jogos">⚽ Jogos</option>
+        <option value="/Fases">📅 Fases</option>
+        <option value="/Inscritos">👤 Inscritos</option>
+      </select>
+    </div>
+
+<div class="m-auto">
+  <a class="btn btn-primary" href="/logging">
+    <i class="fas fa-sign-in-alt me-2"></i> Login
+  </a>
+</div>
+  </div>
+</nav>
     
     <div class="container">
       <div class="main-container fade-in">

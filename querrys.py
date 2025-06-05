@@ -286,3 +286,10 @@ class querrys:
                     Equipa_id1=?, Equipa_id2=?
                 WHERE Id=?
             '''
+    def get_log(self):
+        return'''
+        SELECT * from FADU_PERSON
+        JOIN FADU_LOGIN l AS l.Person_Id 
+        WHERE Email = ? and l.Pass = ?
+
+    '''

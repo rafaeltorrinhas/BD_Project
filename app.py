@@ -209,6 +209,49 @@ def get_Jogos():
     return render_template('jogos.html', title='Jogos')
 
 
+@app.route('/logging/')
+def get_log():
+    return render_template('logging.html', title='log')
+
+
+@app.route('/api/log',methods=['POST'])
+def get_logInfo():
+    try:
+        data = request.get_json()
+        password = data.get('pass')
+        email =data.get('mail')
+
+        callUserPro('EXEC dbo.ValidateLogin',[email,password])
+        return jsonify({'status': 'success'}), 201
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Email and password are required'}), 400
+        
+    
+
+
+@app.route('/api/register',methods=['POST'])
+def get_regInfo():
+    try:
+        data = request.get_json()
+        password = data.get('pass')
+        email = data.get('mail')
+
+        if not email or not password:
+            return jsonify({'status': 'error', 'message': 'Email and password are required'}), 400
+
+        # Call stored procedure to insert login
+        result = callUserPro('EXEC dbo.InsertLogin ?, ?', [email, password])
+
+        return jsonify({'status': 'success'}), 201
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': 'An error occurred during registration'}), 500
+
+
+
+
 @app.route('/api/jogo/<Id>', methods=['DELETE', 'GET', 'PUT'])
 def get_jogos_id(Id):
     if request.method == 'GET':

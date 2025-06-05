@@ -34,13 +34,17 @@ IDEIAS:
     - colocar tipo de inscrito na tabela dos inscritos  
     - Se for treinador ou árbitro mudar o edit para ser compatível com o tipo de inscrito # acho ue ja esta 
     - Nos inscritos meter filtro por modalidades 
-    - Dar fix ao deleteMedals nos detalhes das associações 
+    - Dar fix ao deleteMedals nos detalhes das associações # ta feito 
     - Na página dos jogos fazer uma parte de cima igual às outras páginas
     - Colocar opção de editar e apagar os jogos 
-    - Fazer filtros na universidade e meter os botões a funcionar (adicionar, apagar)
+    - Fazer filtros na universidade e meter os botões a funcionar (adicionar, apagar) 
     - Dar fix ao nome das tabelas
     - Melhorar as views usadas nas páginas
     - No fim de tudo, remover as funções inúteis e melhorar o código (opcional)
+
+    -INDEX LOGIN (pass char256) guarda como has na base de dados 
+    TENTAR FAZER DUAS RULES 
+    udf
 
 
     --trigger se tu editares as ascoacoes modadlidaes duplica as modadlidaes

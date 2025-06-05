@@ -3,18 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <title>Fases</title>
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-custom">
@@ -33,6 +24,9 @@
             <option value="/Fases" selected>📅 Fases</option>
             <option value="/Inscritos">👤 Inscritos</option>
           </select>
+        </div>
+        <div class="m-auto">
+          <a class="btn btn-primary" href="/logging"><i class="fas fa-sign-in-alt me-2"></i> Login</a>
         </div>
       </div>
     </nav>
@@ -56,23 +50,25 @@
               <thead>
                 <tr>
                   {% for col in columns %}
-                  <th><i class="fas fa-info-circle mr-2"></i>{{ col }}</th>
+                    <th>
+                      <i class="fas fa-info-circle mr-2"></i>{{ col }}
+                    </th>
                   {% endfor %}
-                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                  <th>
+                    <i class="fas fa-cogs mr-2"></i>Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {% for row in rows %}
-                <tr>
-                  {% for cell in row %}
-                  <td>{{ cell }}</td>
-                  {% endfor %}
-                  <td>
-                    <a href="#" class="view-phase" data-id="{{ row[0] }}" title="Ver Detalhes">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                  </td>
-                </tr>
+                  <tr>
+                    {% for cell in row %}
+                      <td>{{ cell }}</td>
+                    {% endfor %}
+                    <td>
+                      <a href="#" class="view-phase" data-id="{{ row.0 }}" title="Ver Detalhes"><i class="fas fa-eye"></i></a>
+                    </td>
+                  </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -86,18 +82,18 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
       function navigateToPage(url) {
-        if (url && url !== "#") {
-          window.location.href = url;
+        if (url && url !== '#') {
+          window.location.href = url
         }
       }
-
-      document.addEventListener("click", function (e) {
-        if (e.target.closest(".view-phase")) {
-          e.preventDefault();
-          const phaseId = e.target.closest(".view-phase").getAttribute("data-id");
-          window.location.href = `/Fases/${phaseId}`;
+      
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('.view-phase')) {
+          e.preventDefault()
+          const phaseId = e.target.closest('.view-phase').getAttribute('data-id')
+          window.location.href = `/Fases/${phaseId}`
         }
-      });
+      })
     </script>
   </body>
 </html>

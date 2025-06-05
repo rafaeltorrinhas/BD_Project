@@ -100,3 +100,14 @@ go create table dbo.FADU_UNIVERSIDADE (
     )
 go
 
+go CREATE TABLE dbo.FADU_LOGIN(
+    Id int identity primary key,
+    Person_Id int not null  references dbo.FADU_PERSON,
+    Pass VARBINARY(256)
+)go
+
+CREATE INDEX IDX_PERSON_NAME ON dbo.FADU_PERSON (Name);
+-- index para persuisas na association
+
+CREATE INDEX IDX_PERSON_ASS_ID ON dbo.FADU_PERSON (Ass_Id);
+--index usado freuentemente em varias ueeys

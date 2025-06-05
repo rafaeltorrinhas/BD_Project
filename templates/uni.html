@@ -3,18 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <title>Universidades</title>
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-custom">
@@ -34,6 +25,9 @@
             <option value="/Inscritos">👤 Inscritos</option>
           </select>
         </div>
+        <div class="m-auto">
+          <a class="btn btn-primary" href="/logging"><i class="fas fa-sign-in-alt me-2"></i> Login</a>
+        </div>
       </div>
     </nav>
 
@@ -50,7 +44,6 @@
           </div>
         </div>
 
-       
         <div class="controls-section mb-3 d-flex align-items-center justify-content-between">
           <div></div>
           <button id="openModalBtn" class="btn btn-add">
@@ -65,26 +58,26 @@
               <thead>
                 <tr>
                   {% for col in columns %}
-                  <th><i class="fas fa-info-circle mr-2"></i>{{ col }}</th>
+                    <th>
+                      <i class="fas fa-info-circle mr-2"></i>{{ col }}
+                    </th>
                   {% endfor %}
-                  <th><i class="fas fa-cogs mr-2"></i>Ações</th>
+                  <th>
+                    <i class="fas fa-cogs mr-2"></i>Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {% for row in rows %}
-                <tr>
-                  {% for cell in row %}
-                  <td>{{ cell }}</td>
-                  {% endfor %}
-                  <td>
-                    <a href="#" class="view-uni" data-id="{{ row[2] }}" title="Ver Associação">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="#" class="delete-uni" data-id="{{ row[2] }}" title="Apagar">
-                      <i class="fas fa-trash-alt"></i>
-                    </a>
-                  </td>
-                </tr>
+                  <tr>
+                    {% for cell in row %}
+                      <td>{{ cell }}</td>
+                    {% endfor %}
+                    <td>
+                      <a href="#" class="view-uni" data-id="{{ row.2 }}" title="Ver Associação"><i class="fas fa-eye"></i></a>
+                      <a href="#" class="delete-uni" data-id="{{ row.2 }}" title="Apagar"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                  </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -100,9 +93,7 @@
           <form id="addUniversityForm">
             <div class="modal-header">
               <h5 class="modal-title" id="addUniversityModalLabel">Adicionar Universidade</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
-                <span aria-hidden="true">&times;</span>
-              </button>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
               <div class="form-group">
@@ -128,74 +119,74 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
       function navigateToPage(url) {
-        if (url && url !== "#") {
-          window.location.href = url;
+        if (url && url !== '#') {
+          window.location.href = url
         }
       }
-
-      document.addEventListener("click", function (e) {
-        if (e.target.closest(".view-uni")) {
-          e.preventDefault();
-          const uniId = e.target.closest(".view-uni").getAttribute("data-id");
-          window.location.href = `/Ass/${uniId}`;
+      
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('.view-uni')) {
+          e.preventDefault()
+          const uniId = e.target.closest('.view-uni').getAttribute('data-id')
+          window.location.href = `/Ass/${uniId}`
         }
-
-        if (e.target.closest(".delete-uni")) {
-          e.preventDefault();
-          const deleteBtn = e.target.closest(".delete-uni");
-          const tr = deleteBtn.closest("tr");
+      
+        if (e.target.closest('.delete-uni')) {
+          e.preventDefault()
+          const deleteBtn = e.target.closest('.delete-uni')
+          const tr = deleteBtn.closest('tr')
           // Swap extraction: Name is first column, Address is second column
-          const uniName = tr.children[0].textContent.trim();
-          const uniAddress = tr.children[1].textContent.trim();
-          console.log('Deleting university:', { uniName, uniAddress });
-          if (confirm("Tem a certeza que quer apagar esta universidade?")) {
+          const uniName = tr.children[0].textContent.trim()
+          const uniAddress = tr.children[1].textContent.trim()
+          console.log('Deleting university:', { uniName, uniAddress })
+          if (confirm('Tem a certeza que quer apagar esta universidade?')) {
             fetch(`/api/universidades`, {
-              method: "DELETE",
+              method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ uniName, uniAddress })
             })
               .then((response) => response.json())
               .then((data) => {
-                if (data.status === "success") {
-                  window.location.reload();
+                if (data.status === 'success') {
+                  window.location.reload()
                 } else {
-                  alert("Erro ao apagar universidade: " + data.message);
+                  alert('Erro ao apagar universidade: ' + data.message)
                 }
               })
               .catch((error) => {
-                console.error("Error:", error);
-                alert("Erro ao apagar universidade");
-              });
+                console.error('Error:', error)
+                alert('Erro ao apagar universidade')
+              })
           }
         }
-      });
-
+      })
+      
       // Modal open handler
-      document.getElementById('openModalBtn').addEventListener('click', function() {
-        $('#addUniversityModal').modal('show');
-      });
-
+      document.getElementById('openModalBtn').addEventListener('click', function () {
+        $('#addUniversityModal').modal('show')
+      })
+      
       // Handle add university form submission
-      document.getElementById('addUniversityForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const uniName = document.getElementById('uniName').value;
-        const uniEndereco = document.getElementById('uniEndereco').value;
-
+      document.getElementById('addUniversityForm').addEventListener('submit', function (e) {
+        e.preventDefault()
+        const uniName = document.getElementById('uniName').value
+        const uniEndereco = document.getElementById('uniEndereco').value
+      
         fetch('/api/universidades', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uniName, uniEndereco })
         })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            $('#addUniversityModal').modal('hide');
-            window.location.reload();
-          } else {
-            alert('Erro ao adicionar universidade: ' + (data.message || ''));
-          }
-        });
-      });
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === 'success') {
+              $('#addUniversityModal').modal('hide')
+              window.location.reload()
+            } else {
+              alert('Erro ao adicionar universidade: ' + (data.message || ''))
+            }
+          })
+      })
     </script>
   </body>
 </html>

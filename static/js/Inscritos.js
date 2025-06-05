@@ -54,7 +54,7 @@ document.getElementById("filterForm").addEventListener("submit", function (e) {
 
     console.log("Filters applied:", Object.fromEntries(formData));
 
-    
+
     const params = new URLSearchParams();
     for (let [key, value] of formData.entries()) {
         if (value && value.trim() !== "") {
@@ -149,6 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`/api/search_athletes?search=${encodeURIComponent(searchTerm)}&page=1`)
                 .then((response) => response.json())
                 .then((data) => {
+                    console.log(data)
                     renderAthletesTable(data.rows);
                     renderPagination(data.total_pages, data.current_page);
                 })
@@ -243,6 +244,7 @@ function loadAthletes(page) {
     return fetch(`/api/inscritos?page=${page}`)
         .then((response) => response.json())
         .then((data) => {
+            console.log(data)
             renderAthletesTable(data.rows);
             renderPagination(data.total_pages, data.current_page);
             return data;
