@@ -100,7 +100,3 @@ go create table dbo.FADU_UNIVERSIDADE (
     )
 go
 
-
-
-
--- could increse perfomance CREATE INDEX IDX_FADU_PERSONEQUIPA_MOD_ASS ON FADU_PERSONEQUIPA(Mod_Id, Ass_Id);
