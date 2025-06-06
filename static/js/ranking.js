@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     loadRanking();
 });
 
@@ -11,7 +11,7 @@ function loadRanking() {
 
             data.rows.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                
+
                 // Position column
                 const tdPosition = document.createElement('td');
                 tdPosition.textContent = index + 1;

@@ -45,7 +45,6 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('index.html')
-# acho que o params é o suficiente para parar sql ejection
 
 
 def getInfo(query, params=None):
@@ -53,11 +52,10 @@ def getInfo(query, params=None):
         cnxn = get_connection()
         cursor = cnxn.cursor()
         if params is not None:
-            cursor.execute(query, params)  # Ensure params is passed as a tuple
+            cursor.execute(query, params) 
         else:
             cursor.execute(query)
 
-        # Collect columns and rows
         cols = [col[0] for col in cursor.description]
         raw_rows = cursor.fetchall()
 
@@ -127,20 +125,17 @@ def get_Ass_Info():
     filters = []
     params = []
 
-    # Filter: acc Name
     acc_name = request.args.get('acc_name', '').strip()
     if acc_name:
         filters.append("ass.Name LIKE ?")
         params.append(f"%{acc_name}%")
 
-    # Filter: modalidade (by ID)
     modalidades = request.args.getlist('modalidade')
     if modalidades:
         placeholders = ','.join(['?'] * len(modalidades))
         filters.append(f"mod.Id IN ({placeholders})")
         params.extend(modalidades)
 
-    # Sorting
     sort_by = request.args.get('sort_by', '').strip()
     sort_clause = "ORDER BY ass.Id"
     if sort_by:
@@ -158,7 +153,6 @@ def get_Ass_Info():
         }
         sort_clause = f"ORDER BY {sort_map.get(sort_by, 'ass.Id')}"
 
-    # Base query
     query = q.get_Ass()
 
     if filters:
@@ -240,7 +234,6 @@ def get_regInfo():
         if not email or not password:
             return jsonify({'status': 'error', 'message': 'Email and password are required'}), 400
 
-        # Call stored procedure to insert login
         result = callUserPro('EXEC dbo.InsertLogin ?, ?', [email, password])
 
         return jsonify({'status': 'success'}), 201
@@ -267,31 +260,27 @@ def get_jogos_id(Id):
             if not data.get(field):
                 return jsonify({'error': f'Missing required field: {field}'}), 400
 
-        # Extract data from request
         host_team = data.get('hostTeam')
         opponent_team = data.get('opponentTeam')
         modality = data.get('modality')
-        # Default duration if not provided
         duration = data.get('duration', '00:00')
         phase = data.get('phase')
         location = data.get('location', '')
         date = data.get('date')
-        result = data.get('result', '')  # Game result (score)
+        result = data.get('result', '')  
 
         # Validate that host and opponent teams are different
         if host_team == opponent_team:
             return jsonify({'error': 'Host team and opponent team cannot be the same'}), 400
 
-        # Update query - adjust column names to match your database schema
         update_query = q.put_jogo()
 
-        # Parameters for the update query
         params = [
             date,
             duration,
             result,
             location,
-            phase if phase else None,  # Allow null for phase
+            phase if phase else None,  
             modality,
             host_team,
             opponent_team,
@@ -341,10 +330,8 @@ def get_Jogo_Id(GameId):
     queryTeams = q.get_Player_From_Game()
     colsTeams, Teams = getInfo(queryTeams, GameId)
 
-    # Get the game result (from the `Resultado` field)
     game_result = serialized[0][2] if serialized else "Resultado não disponível"
 
-    # Pass the data to the template
     return render_template('jogoDetalhes.html',
                            jogoId=GameId,
                            columns=cols,
@@ -398,15 +385,12 @@ def get_Ass_Id(AssId):
     teams_query = q.get_Ass_Teams()
     medals_query = q.get_Ass_Med()
     # Queries for athletes, coaches, and referees
-    # Execute the queries and get the results
     cols, association_data = getInfo(query, (AssId,))
     medals_cols, medals_data = getInfo(medals_query, (AssId,))
     teams_cols, teams_data = getInfo(teams_query, (AssId,))
 
-    # Association name (use the first row, which should contain the association name)
     assName = association_data[0][1] if association_data else "Associação desconhecida"
 
-    # Return the rendered template with all the necessary data
     return render_template('assDetalhes.html',
                            AssName=assName,
                            columns=cols,
@@ -462,7 +446,6 @@ def search_athletes():
     if len(search) < 2:
         return jsonify([])
 
-    # Main query with pagination
     query = '''
         SELECT
             person.Id AS Person_Id,
@@ -532,7 +515,7 @@ def api_get_associacoes():
             if not universities:
                 return jsonify({'status': 'error', 'message': 'No universities selected'})
 
-            university_address = universities[0]  # The address is now the value
+            university_address = universities[0]  
 
             cnxn = get_connection()
             cursor = cnxn.cursor()
@@ -549,7 +532,6 @@ def api_get_associacoes():
             cursor.close()
             cnxn.close()
 
-            # Update remaining universities if any
             if len(universities) > 1:
                 for university_address in universities[1:]:
                     callUserPro(
@@ -595,7 +577,7 @@ def api_update_ass(ass):
         if not universities:
             return jsonify({'status': 'error', 'message': 'No universities selected'})
 
-        university_address = universities[0]  # The address is now the value
+        university_address = universities[0] 
 
         cnxn = get_connection()
         cursor = cnxn.cursor()
@@ -654,7 +636,6 @@ def search_ass():
     offset = (page - 1) * per_page
 
     if len(search) < 2:
-        # Return empty but consistent structure
         response = {
             'columns': [],
             'rows': [],
@@ -664,7 +645,6 @@ def search_ass():
         }
         return jsonify(response)
 
-    # Main query with pagination
     query = q.get_Ass_Search_Name()
     params = [f'%{search}%', offset, per_page]
     acc_cols, acc_data = getInfo(query, params)
@@ -673,7 +653,6 @@ def search_ass():
         for row in acc_data
     ]
 
-    # Count query for pagination
     count_query = q.get_Count_Ass_Search_Name()
     count_cols, count_data = getInfo(count_query, [f'%{search}%'])
     total_ass = count_data[0][0] if count_data else 0
@@ -754,7 +733,7 @@ def api_update_ass_modalidades(ass_id):
 
         return jsonify({"status": "success"})
     except Exception as e:
-        print(f"Error updating modalidades: {e}")  # Add logging
+        print(f"Error updating modalidades: {e}")  
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
@@ -785,7 +764,6 @@ def update_athlete(athlete_id):
         cnxn = get_connection()
         cursor = cnxn.cursor()
 
-        # Call the stored procedure
         cursor.execute("""
             EXEC dbo.UpdateAthlete
                 @Id = ?,
@@ -850,7 +828,6 @@ def get_athlete_details(athlete_id):
 
     if rows:
         row = rows[0]
-        # Get modalidades for this athlete
         modalidades_query = """
         SELECT m.Id, m.Name
         FROM FADU_MODALIDADE m
@@ -883,10 +860,8 @@ def api_update_athlete_modalidades(athlete_id):
         data = request.get_json()
         modalidades = data.get('modalidades', [])
 
-        # Convert modalidades list to comma-separated string of IDs
         modalidades_ids = ','.join(str(m['id']) for m in modalidades)
 
-        # Call the stored procedure
         callUserProcedure = '''
             EXEC dbo.updateAthleteModalidades ?, ?;
         '''
@@ -939,19 +914,16 @@ def api_add_athlete():
         filters = []
         params = []
 
-        # Filter: CC Number
         cc_number = request.args.get('cc_number', '').strip()
         if cc_number:
             filters.append("NumeroCC LIKE ?")
             params.append(f"%{cc_number}%")
 
-        # Filter: Phone Number
         phone_number = request.args.get('phone_number', '').strip()
         if phone_number:
             filters.append("Phone LIKE ?")
             params.append(f"%{phone_number}%")
 
-        # Filter: Age
         age = request.args.get('age', '').strip()
         if age:
             try:
@@ -961,23 +933,21 @@ def api_add_athlete():
                 filters.append("YEAR(DateBirth) = ?")
                 params.append(birth_year)
             except ValueError:
-                pass  # Skip invalid ages
+                pass 
 
-        # Filter: Type (Athlete, Coach, Referee)
         inscrito_type = request.args.get('type', '').strip()
         if inscrito_type:
             filters.append("InscritoType = ?")
             params.append(inscrito_type)
 
-        # Sorting
         sort_by = request.args.get('sort_by', '').strip()
         sort_clause = "ORDER BY Person_Id"
         if sort_by:
             sort_map = {
                 "name_asc": "Inscrito_Name ASC",
                 "name_desc": "Inscrito_Name DESC",
-                "age_asc": "DateBirth DESC",  # younger first
-                "age_desc": "DateBirth ASC",  # older first
+                "age_asc": "DateBirth DESC",   
+                "age_desc": "DateBirth ASC",  
                 "birth_date_asc": "DateBirth ASC",
                 "birth_date_desc": "DateBirth DESC",
                 "association_asc": "Association_Name ASC",
@@ -987,7 +957,6 @@ def api_add_athlete():
             }
             sort_clause = f"ORDER BY {sort_map.get(sort_by, 'Person_Id')}"
 
-        # Base query
         query = q.get_Atletas_search()+'''
         SELECT 
             Person_Id,
@@ -1010,7 +979,6 @@ def api_add_athlete():
 
         inscritos_cols, inscritos_data = getInfo(query, params_with_paging)
 
-        # Count query for pagination
         count_query = q.get_Atletas_search()+'''
         SELECT COUNT(*) FROM Inscritos
         '''
@@ -1037,11 +1005,10 @@ def api_manage_medalhas(ass_id):
     if request.method == 'POST':
         data = request.get_json()
         modalidade = data.get('modalidade')
-        tipo_medalha = data.get('tipoMedalha')  # This is now the medal type ID
+        tipo_medalha = data.get('tipoMedalha')
         ano = data.get('ano')
         print(ano, tipo_medalha, modalidade)
 
-        # Insert the medal directly using the medal type ID
         callUserPro(
             """
                 INSERT INTO FADU_MEDALHAS (Ass_Id, Mod_Id, TypeMedal_Id, Year)
@@ -1058,7 +1025,6 @@ def api_manage_medalhas(ass_id):
         ano = data.get('ano')
         print(ano, tipo_medalha, modalidade)
 
-        # Delete the medal
         callUserPro("""
                 DELETE FROM FADU_MEDALHAS 
                 WHERE Ass_Id = ? AND Mod_Id = ? AND Year = ?
@@ -1069,7 +1035,6 @@ def api_manage_medalhas(ass_id):
 
 @app.route('/inscritos/<int:inscrito_id>')
 def inscrito_details(inscrito_id):
-    # Get inscrito type and basic info
     query = '''
     SELECT 
         person.Id,
@@ -1098,13 +1063,11 @@ def inscrito_details(inscrito_id):
     if not inscrito:
         return "Inscrito não encontrado", 404
 
-    # Get type-specific data
     modalidades = []
     athletes = []
     competitions = []
 
     if inscrito[7] == 'Athlete':
-        # Get athlete's modalidades
         modalidades_query = '''
         SELECT m.Id, m.Name
         FROM FADU_MODALIDADE m
@@ -1190,7 +1153,6 @@ def api_edit_inscrito():
     callUserPro(update_person_query, [
                 name, numero_cc, date_birth, email, phone, ass_id, inscrito_id])
 
-    # Handle type-specific updates
     if inscrito_type == 'Athlete' and modalidadesIds:
         # Delete existing modalidades
         delete_modalidades_query = '''
@@ -1227,7 +1189,6 @@ def api_delete_inscrito(inscrito_id):
     if not inscrito_type:
         return jsonify({'status': 'error', 'message': 'Inscrito não encontrado'})
 
-    # Delete type-specific records first
     if inscrito_type == 'Athlete':
         # Delete athlete's modalidades
         delete_modalidades_query = '''
@@ -1274,7 +1235,6 @@ def api_delete_inscrito(inscrito_id):
         '''
         callUserPro(delete_referee_query, [inscrito_id])
 
-    # Finally, delete the person record
     delete_person_query = '''
     DELETE FROM FADU_PERSON
     WHERE Id = ?
@@ -1288,9 +1248,8 @@ def api_delete_inscrito(inscrito_id):
 def api_ass_teams(assId):
     if request.method == 'DELETE':
         try:
-            print(f"Attempting to delete team with ID: {assId}")  # Debug log
+            print(f"Attempting to delete team with ID: {assId}")  
             
-            # Let the trigger handle all the deletion logic
             callUserPro('''
                 DELETE FROM FADU_EQUIPA
                 WHERE Id = ?
@@ -1309,7 +1268,6 @@ def api_ass_teams(assId):
             if not modalidade:
                 return jsonify({'status': 'error', 'message': 'Modalidade é obrigatória'}), 400
 
-            # First create the team
             insertq = '''
                 INSERT INTO FADU_EQUIPA (Ass_Id, Mod_Id)
                 OUTPUT INSERTED.Id
@@ -1320,7 +1278,6 @@ def api_ass_teams(assId):
             cursor.execute(insertq, [assId, modalidade])
             team_id = cursor.fetchone()[0]
 
-            # Then add players to the team
             if players:
                 for player_id in players:
                     cursor.execute('''
@@ -1334,7 +1291,7 @@ def api_ass_teams(assId):
 
             return jsonify({'status': 'success'})
         except Exception as e:
-            print(f"Error creating team: {e}")  # Add debug logging
+            print(f"Error creating team: {e}")  
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
@@ -1348,12 +1305,10 @@ def get_ranking():
         cnxn = get_connection()
         cursor = cnxn.cursor()
 
-        # Execute the ranking cursor
         cursor.execute('''
             EXEC dbo.ranking_cursor
         ''')
 
-        # Get the results and convert each row to a list
         rows = cursor.fetchall()
         rows = [list(row) for row in rows]
 

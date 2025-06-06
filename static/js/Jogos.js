@@ -70,7 +70,6 @@ function applyFilters() {
     const tbody = document.querySelector("tbody");
     const rows = Array.from(tbody.querySelectorAll("tr"));
 
-    // Sorting
     const sortBy = formData.get("sort_by");
     if (sortBy) {
         rows.sort((a, b) => {
@@ -99,7 +98,6 @@ function applyFilters() {
         rows.forEach(row => tbody.appendChild(row));
     }
 
-    // Filtering
     rows.forEach(row => {
         const rowData = row.textContent.toLowerCase();
         let visible = true;
@@ -167,7 +165,6 @@ function updateActiveFilters() {
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
-    // Hide filter section initially
     document.getElementById("filterContent").style.display = "none";
 
     const selectElement = document.getElementById("modalidade");
@@ -202,21 +199,18 @@ document.addEventListener("DOMContentLoaded", () => {
             if (selectedModalidade) {
                 loadEditTeams(selectedModalidade);
             } else {
-                // Clear team dropdowns if no modalidade selected
                 document.getElementById("editTeamHost").innerHTML = '<option value="">Selecionar modalidade primeiro</option>';
                 document.getElementById("editTeamOpo").innerHTML = '<option value="">Selecionar modalidade primeiro</option>';
             }
         });
     }
 
-    // Event listener for edit modal shown
     const editGameModal = document.getElementById("editGameModal");
     if (editGameModal) {
         editGameModal.addEventListener("shown.bs.modal", () => {
             document.getElementById("editModalidade").focus();
         });
 
-        // Clear form when modal is hidden
         editGameModal.addEventListener("hidden.bs.modal", () => {
             clearEditForm();
         });
@@ -264,8 +258,7 @@ function deleteGame(id) {
             .then(response => response.json())
             .then(data => {
                 alert('Game deleted successfully!');
-                // Refresh the page or remove the element from DOM
-                location.reload(); // or implement DOM removal
+                location.reload();
 
             })
             .catch(error => {
@@ -291,8 +284,8 @@ function renderTeamOpo(coluns, rows) {
     rows.forEach(row => {
         if (row[0] != selectedValue) {
             const option = document.createElement("option");
-            option.value = row[0];    // Set the option's value
-            option.textContent = row[4]; // Set the displayed text
+            option.value = row[0];
+            option.textContent = row[4];
             selectMods.appendChild(option);
         }
     });
@@ -309,8 +302,8 @@ function renderFases(coluns, rows) {
     selectMods.innerHTML = '<option value="">Selecionar fase</option>';
     rows.forEach(row => {
         const option = document.createElement("option");
-        option.value = row[0];    // Set the option's value
-        option.textContent = row[1]; // Set the displayed text
+        option.value = row[0];
+        option.textContent = row[1];
         selectMods.appendChild(option);
     });
 }
@@ -326,8 +319,8 @@ function renderTeamHost(coluns, rows) {
     rows.forEach(row => {
         console.log(row)
         const option = document.createElement("option");
-        option.value = row[0];    // Set the option's value
-        option.textContent = row[4]; // Set the displayed text
+        option.value = row[0];
+        option.textContent = row[4];
         selectMods.appendChild(option);
     });
 }
@@ -344,8 +337,8 @@ function renderMods(coluns, rows) {
 
     rows.forEach(row => {
         const option = document.createElement("option");
-        option.value = row[0];    // Set the option's value
-        option.textContent = row[1]; // Set the displayed text
+        option.value = row[0];
+        option.textContent = row[1];
         selectMods.appendChild(option);
     });
 }
@@ -410,7 +403,6 @@ function renderPagination(totalPages, currentPage) {
 function clearForm() {
     document.getElementById("addGameForm").reset();
 }
-// Needs to be fully changed to work just the structure
 function addGame() {
     const hostValue = document.getElementById('teamHost').value;
     const opoValue = document.getElementById('teamOpo').value;
@@ -425,7 +417,6 @@ function addGame() {
 
     const form = document.getElementById('addGameForm');
     if (form.checkValidity()) {
-        // Build the data object
         const gameData = {
             hostTeam: hostValue,
             opponentTeam: opoValue,
@@ -438,7 +429,6 @@ function addGame() {
 
         console.log('Game Data:', gameData);
 
-        // Send the data to the Flask backend using fetch
         fetch('/api/jogos/', {
             method: 'POST',
             headers: {
@@ -449,13 +439,11 @@ function addGame() {
             .then(response => response.json())
             .then(data => {
                 console.log('Response from server:', data);
-                // Optionally handle success/failure here (show a toast, reload table, etc.)
             })
             .catch(error => {
                 console.error('Error sending game data:', error);
             });
 
-        // Close the modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('gameModal'));
         loadGames()
         modal.hide();
@@ -491,14 +479,12 @@ function renderGamesTable(columns, rows) {
     rows.forEach(row => {
         const tr = document.createElement("tr");
 
-        // Render table cells
         row.forEach(cell => {
             const td = document.createElement("td");
             td.textContent = cell;
             tr.appendChild(td);
         });
 
-        // Add Actions cell
         const actionsTd = document.createElement("td");
         actionsTd.innerHTML = `
             <a href="#" class="view-game" data-id="${row[0]}" title="Ver Detalhes">
@@ -524,19 +510,18 @@ function openEditModal(gameId) {
 
             const game = data.rows[0];
             console.log(game)
-            // Populate the edit form with game data
-            document.getElementById("editGameId").textContent = game[0];  // Assuming you have a hidden input for game ID
-            document.getElementById("editModalidade").value = game[6];  // Assuming 'modality' corresponds to a select option
-            document.getElementById("editFase").value = game[5];  // Assuming 'phase' corresponds to a select option
-            document.getElementById("editTeamHost").value = game[7];  // Assuming 'hostTeam' corresponds to a select option
-            document.getElementById("editTeamOpo").value = game[8];  // Assuming 'opponentTeam' corresponds to a select option
-            document.getElementById("editCamp").value = game[4];  // Assuming 'location' corresponds to a text input
-            document.getElementById("editDuration").value = game[2];  // Assuming 'duration' corresponds to a number input
-            document.getElementById("editDate").value = game[1];  // Assuming 'date' corresponds to a date input
+            document.getElementById("editGameId").textContent = game[0];
+            document.getElementById("editModalidade").value = game[6];
+            document.getElementById("editFase").value = game[5];
+            document.getElementById("editTeamHost").value = game[7];
+            document.getElementById("editTeamOpo").value = game[8];
+            document.getElementById("editCamp").value = game[4];
+            document.getElementById("editDuration").value = game[2];
+            document.getElementById("editDate").value = game[1];
             document.getElementById("editRes").value = game[3];
-            // Optionally, you can update other game-specific fields in the modal.
 
-            // After populating the form, open the modal
+
+
             const modal = new bootstrap.Modal(document.getElementById("editGameModal"));
             modal.show();
 
@@ -546,13 +531,11 @@ function openEditModal(gameId) {
 function clearEditForm() {
     document.getElementById("editGameForm").reset();
 
-    // Reset dropdowns to default state
     document.getElementById("editTeamHost").innerHTML = '<option value="">Selecionar Team</option>';
     document.getElementById("editTeamOpo").innerHTML = '<option value="">Selecionar Team host primeiro</option>';
 }
 let cachedEditTeams = null;
 
-// Load data for edit modal dropdowns
 function loadEditModalData() {
     return Promise.all([
         loadModalidadesForEdit(),
@@ -628,7 +611,7 @@ function renderEditTeamHost(columns, rows) {
     rows.forEach(row => {
         const option = document.createElement("option");
         option.value = row[0];
-        option.textContent = row[4]; // Assuming team name is in column 4
+        option.textContent = row[4];
         selectHost.appendChild(option);
     });
 }
@@ -642,7 +625,7 @@ function renderEditTeamOpo(columns, rows, selectedHostId) {
         if (row[0] != selectedHostId) {
             const option = document.createElement("option");
             option.value = row[0];
-            option.textContent = row[4]; // Assuming team name is in column 4
+            option.textContent = row[4];
             selectOpo.appendChild(option);
         }
     });
@@ -659,7 +642,6 @@ function editGame() {
     const date = document.getElementById('editDate').value;
     const result = document.getElementById('editRes').value;
 
-    // Convert duration to HH:MM format if it's in minutes
     let duracao = durationValue;
     if (durationValue && !durationValue.includes(':')) {
         const minutos = parseInt(durationValue, 10);
@@ -670,7 +652,6 @@ function editGame() {
 
     const form = document.getElementById('editGameForm');
     if (form.checkValidity()) {
-        // Build the data object
         const gameData = {
             hostTeam: hostValue,
             opponentTeam: opoValue,
@@ -684,9 +665,8 @@ function editGame() {
 
         console.log('Edit Game Data:', gameData);
 
-        // Send the data to the Flask backend using fetch
         fetch(`/api/jogo/${gameId}`, {
-            method: 'PUT', // or 'PATCH' depending on your API
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -701,14 +681,11 @@ function editGame() {
             .then(data => {
                 console.log('Response from server:', data);
 
-                // Show success message
                 alert('Jogo atualizado com sucesso!');
 
-                // Close the modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('editGameModal'));
                 modal.hide();
 
-                // Reload the games table
                 loadGames();
             })
             .catch(error => {
@@ -722,9 +699,7 @@ function editGame() {
 
 // Enhanced openEditModal function
 function openEditModal(gameId) {
-    // First load the modal data
     loadEditModalData().then(() => {
-        // Then fetch the game data
         return fetch(`/api/jogo/${gameId}`);
     })
         .then((response) => response.json())
@@ -733,35 +708,28 @@ function openEditModal(gameId) {
 
             const game = data.rows[0];
 
-            // Populate basic game information
             document.getElementById("editGameId").textContent = game[0];
             document.getElementById("editDate").value = game[1];
             document.getElementById("editDuration").value = game[2];
             document.getElementById("editRes").value = game[3] || '';
             document.getElementById("editCamp").value = game[4] || '';
 
-            // Set fase
             document.getElementById("editFase").value = game[5];
 
-            // Set modalidade and load corresponding teams
             const modalidadeId = game[6];
             document.getElementById("editModalidade").value = modalidadeId;
 
-            // Load teams for this modalidade
             return loadEditTeams(modalidadeId).then(() => {
-                // Set team values after teams are loaded
                 const hostTeamId = game[7];
                 const opoTeamId = game[8];
 
                 document.getElementById("editTeamHost").value = hostTeamId;
 
-                // Update opponent dropdown to exclude selected host team
                 if (cachedEditTeams) {
                     renderEditTeamOpo(cachedEditTeams.columns, cachedEditTeams.rows, hostTeamId);
                     document.getElementById("editTeamOpo").value = opoTeamId;
                 }
 
-                // Show the modal
                 const modal = new bootstrap.Modal(document.getElementById("editGameModal"));
                 modal.show();
             });

@@ -5,7 +5,6 @@ let selectedModalidadesMap = new Map();
 document.getElementById("filterForm").addEventListener("submit", function (e) {
     e.preventDefault();
 
-    // 1️⃣ Build active filter tags
     const formData = new FormData(this);
     const activeFiltersContainer = document.getElementById("activeFilterTags");
 
@@ -80,23 +79,18 @@ function toggleFilters() {
 }
 
 function clearFilters() {
-    // Clear all form inputs
     document.getElementById("filterForm").reset();
 
-    // Hide active filters
     document.getElementById("activeFilters").style.display = "none";
 
-    // Clear active filter tags
     document.getElementById("activeFilterTags").innerHTML = "";
 
     console.log("Filters cleared");
 }
 
 function removeFilter(filterType) {
-    // Remove specific filter
     console.log("Removing filter:", filterType);
 
-    // Find and remove the filter tag
     const filterTags = document.querySelectorAll(".filter-tag");
     filterTags.forEach((tag) => {
         if (tag.textContent.toLowerCase().includes(filterType)) {
@@ -104,7 +98,6 @@ function removeFilter(filterType) {
         }
     });
 
-    // Hide active filters section if no tags remain
     const remainingTags = document.querySelectorAll(".filter-tag");
     if (remainingTags.length === 0) {
         document.getElementById("activeFilters").style.display = "none";
@@ -187,12 +180,11 @@ function handleAddAthlete(event) {
     }
     var radios = document.getElementsByName("athleteType");
 
-    // Itera pelos botões de rádio para verificar qual está selecionado
     for (var i = 0; i < radios.length; i++) {
         if (radios[i].checked) {
-            var selectedType = radios[i].value;  // Obtém o valor do botão selecionado
+            var selectedType = radios[i].value;
             console.log("Valor selecionado: " + selectedType);
-            break;  // Sai do loop após encontrar o selecionado
+            break;
         }
     }
 
@@ -351,7 +343,6 @@ function initializeModalidadesSearch() {
             renderModalidadesCheckboxes(filteredModalidades);
         }
 
-        // Re-check previously selected modalidades
         selectedModalidadesMap.forEach((name, id) => {
             const checkbox = document.getElementById(`modalidade_${id}`);
             if (checkbox) {
@@ -439,7 +430,6 @@ function loadAssociations(selectElementId = null, selectedId = null) {
     return fetch("/api/associacoes")
         .then((response) => response.json())
         .then((data) => {
-            // If selectElementId is provided, populate that select element
             if (selectElementId) {
                 const select = document.getElementById(selectElementId);
                 if (select) {
@@ -469,21 +459,19 @@ function loadModalidades() {
             allModalidades = data.rows || [];
             const select = document.getElementById("modalidadesSelect");
             if (select) {
-                // Add Bootstrap classes and make it multiple
                 select.className = "form-control form-control-lg";
                 select.setAttribute("multiple", "true");
-                select.setAttribute("size", "8"); // Show 8 options at once
-                select.style.height = "200px"; // Set a good height
+                select.setAttribute("size", "8");
+                select.style.height = "200px";
 
                 select.innerHTML = "";
                 allModalidades.forEach(modalidade => {
                     const option = document.createElement("option");
-                    option.value = modalidade[0]; // ID
-                    option.textContent = modalidade[1]; // Name
+                    option.value = modalidade[0];
+                    option.textContent = modalidade[1];
                     select.appendChild(option);
                 });
 
-                // Add Bootstrap helper text with badge
                 if (!document.getElementById("modalidades-help")) {
                     const helpContainer = document.createElement("div");
                     helpContainer.className = "mt-2";
@@ -503,7 +491,6 @@ function loadModalidades() {
                     select.parentNode.appendChild(helpContainer);
                 }
 
-                // Add selected count display
                 select.addEventListener("change", function () {
                 });
             }
@@ -576,12 +563,10 @@ function openEditModal(athleteId) {
                 document.getElementById("athleteType").textContent = athlete.type;
 
 
-                // Store athlete's current modalidades for later use
                 const athleteModalidades = athlete.modalidades || [];
 
                 // First load associations and set the selected one
                 loadAssociations("editAthleteAssId", athlete.associationId).then(() => {
-                    // Add event listener for association change
                     const assSelect = document.getElementById("editAthleteAssId");
                     assSelect.addEventListener("change", function () {
                         loadModalidadesForAssociation(this.value, athleteModalidades);
@@ -600,21 +585,18 @@ function openEditModal(athleteId) {
 }
 
 function loadModalidadesForAssociation(associationId, athleteModalidades) {
-    // Get association's modalidades from FADU_ASSMODALIDADE
     fetch(`/api/ass/${associationId}/modalidades`)
         .then(response => response.json())
         .then(data => {
             const assModalidades = data.rows || [];
             const assModalidadesIds = new Set(assModalidades.map(m => m[0]));
 
-            // Get all modalidades to show athlete's current ones
             return fetch("/api/modalidades")
                 .then(response => response.json())
                 .then(allData => {
                     const allModalidades = allData.rows || [];
                     const combinedModalidades = new Map();
 
-                    // Add all association modalidades
                     assModalidades.forEach(m => {
                         combinedModalidades.set(m[0], {
                             id: m[0],
@@ -622,7 +604,6 @@ function loadModalidadesForAssociation(associationId, athleteModalidades) {
                         });
                     });
 
-                    // Add athlete's current modalidades that aren't in the association
                     if (athleteModalidades) {
                         athleteModalidades.forEach(m => {
                             if (!assModalidadesIds.has(m.id)) {
@@ -631,7 +612,6 @@ function loadModalidadesForAssociation(associationId, athleteModalidades) {
                         });
                     }
 
-                    // Populate the select
                     const select = document.getElementById("editModalidadesSelect");
                     if (select) {
                         select.innerHTML = "";
@@ -639,14 +619,12 @@ function loadModalidadesForAssociation(associationId, athleteModalidades) {
                             const option = document.createElement("option");
                             option.value = modalidade.id;
                             option.textContent = modalidade.name;
-                            // Add a visual indicator for modalidades not in the current association
                             if (!assModalidadesIds.has(modalidade.id)) {
                                 option.textContent += " (outra associação)";
                             }
                             select.appendChild(option);
                         });
 
-                        // Select the athlete's current modalidades
                         if (athleteModalidades) {
                             athleteModalidades.forEach(modalidade => {
                                 const option = select.querySelector(`option[value="${modalidade.id}"]`);
@@ -674,7 +652,6 @@ function handleEditAthlete(event) {
         athleteAssId: document.getElementById("editAthleteAssId").value
     });
 
-    // First update the athlete's basic info
     fetch(`/api/athlete/${athleteId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -683,7 +660,6 @@ function handleEditAthlete(event) {
         .then((response) => response.json())
         .then((data) => {
             if (data.status === "success") {
-                // Then update the modalidades
                 const select = document.getElementById("editModalidadesSelect");
                 const selectedOptions = Array.from(select.selectedOptions);
                 const modalidadesPayload = {

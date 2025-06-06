@@ -40,25 +40,25 @@ document.addEventListener("DOMContentLoaded", function () {
       if (confirm("Tem certeza que deseja remover esta equipa?")) {
         const teamId = this.dataset.teamId;
         console.log("Deleting team with ID:", teamId);  // Debug log
-        
+
         fetch(`/api/ass/${teamId}/teams`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           }
         })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.status === "success") {
-            location.reload();
-          } else {
-            alert("Erro ao remover equipa: " + data.message);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("Erro ao remover equipa");
-        });
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              location.reload();
+            } else {
+              alert("Erro ao remover equipa: " + data.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Erro ao remover equipa");
+          });
       }
     });
   });
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Add Team functionality
-  $('#teamModalidade').change(function() {
+  $('#teamModalidade').change(function () {
     const assId = $('#assId').val();
     const modalidade = $(this).val();
     loadPlayersForModalidade(modalidade);
@@ -113,9 +113,9 @@ document.addEventListener("DOMContentLoaded", function () {
     $.ajax({
       url: `/api/AssInscritos/ATLETA/${assId}`,
       method: 'GET',
-      success: function(response) {
+      success: function (response) {
         console.log('Players data:', response); // Debug log
-        
+
         $('#teamPlayers').empty();
         if (response.rows.length === 0) {
           $('#teamPlayers').append(new Option('Nenhum jogador disponível', ''));
@@ -129,14 +129,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         $('#teamPlayers').trigger('change');
       },
-      error: function(xhr, status, error) {
+      error: function (xhr, status, error) {
         console.error('Error loading players:', error);
         alert('Erro ao carregar jogadores. Por favor, tente novamente.');
       }
     });
   }
 
-  $('#saveTeam').click(function() {
+  $('#saveTeam').click(function () {
     const assId = $('#assId').val();
     const modalidade = $('#teamModalidade').val();
     const players = $('#teamPlayers').val();
@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
         modalidade: parseInt(modalidade),
         players: players || []
       }),
-      success: function(response) {
+      success: function (response) {
         if (response.status === 'success') {
           $('#addTeamModal').modal('hide');
           location.reload();
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert('Erro ao adicionar equipa: ' + response.message);
         }
       },
-      error: function(xhr, status, error) {
+      error: function (xhr, status, error) {
         alert('Erro ao adicionar equipa: ' + error);
       }
     });
