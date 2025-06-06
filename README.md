@@ -3,7 +3,7 @@
 Simple Flask webapp project backed by SQL Server.
 
 
-## Alterçãoes após Apresentação
+## Alterações após Apresentação
 
 Alteramos um erro nos triggers da transaction estar antes do try
 
