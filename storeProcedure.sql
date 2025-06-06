@@ -482,7 +482,7 @@ BEGIN
     VALUES (@PersonId, @HashedPassword);
 END;
 go
-CREATE PROCEDURE ValidateLogin
+CREATE or alter PROCEDURE dbo.ValidateLogin
     @Email VARCHAR(64),
     @Password NVARCHAR(256)
 AS
@@ -495,7 +495,7 @@ BEGIN
         FROM dbo.FADU_PERSON p
         JOIN dbo.FADU_LOGIN l ON l.Person_Id = p.Id
         WHERE p.Email = @Email
-          AND l.Pass = HASHBYTES('SHA2_256', @Password)
+          AND l.Pass =dbo.HashPass(@Password)
     )
     BEGIN
         SELECT 'success' AS status;
