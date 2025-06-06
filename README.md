@@ -1,4 +1,4 @@
-# Final Project - FADU
+# Final Project
 
 Simple Flask webapp project backed by SQL Server.
 
